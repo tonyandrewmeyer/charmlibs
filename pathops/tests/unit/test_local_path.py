@@ -169,3 +169,40 @@ class TestGlobPattern:
 
         result = sorted(p.name for p in LocalPath(populated_dir).glob(_Pattern()))
         assert result == ['c.md']
+
+
+class TestMatchCaseSensitive:
+    def test_case_insensitive(self):
+        # '.txt' matches '*.TXT' case-insensitively
+        assert LocalPath('/foo/bar.TXT').match('*.txt', case_sensitive=False)
+
+    def test_case_sensitive(self):
+        # '.TXT' does not match '*.txt' case-sensitively
+        assert not LocalPath('/foo/bar.TXT').match('*.txt', case_sensitive=True)
+        assert LocalPath('/foo/bar.TXT').match('*.TXT', case_sensitive=True)
+
+    def test_default_is_case_sensitive(self):
+        assert not LocalPath('/foo/bar.TXT').match('*.txt')
+        assert LocalPath('/foo/bar.TXT').match('*.TXT')
+
+
+class TestGlobCaseSensitive:
+    @pytest.fixture
+    def dir_with_caps(self, tmp_path: pathlib.Path) -> pathlib.Path:
+        (tmp_path / 'HELLO.TXT').write_text('')
+        (tmp_path / 'world.md').write_text('')
+        return tmp_path
+
+    def test_case_insensitive_matches_uppercase(self, dir_with_caps: pathlib.Path):
+        results = sorted(
+            p.name for p in LocalPath(dir_with_caps).glob('*.txt', case_sensitive=False)
+        )
+        assert results == ['HELLO.TXT']
+
+    def test_case_sensitive_excludes_uppercase(self, dir_with_caps: pathlib.Path):
+        results = list(LocalPath(dir_with_caps).glob('*.txt', case_sensitive=True))
+        assert results == []
+
+    def test_default_is_case_sensitive(self, dir_with_caps: pathlib.Path):
+        results = list(LocalPath(dir_with_caps).glob('*.txt'))
+        assert results == []

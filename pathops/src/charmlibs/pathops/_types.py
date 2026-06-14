@@ -115,13 +115,17 @@ class PathProtocol(typing.Protocol):
         """
         ...
 
-    # NOTE: Not supported -- (Python 3.12) ``case_sensitive`` keyword argument
-    def match(self, path_pattern: str) -> bool:
+    def match(self, path_pattern: str, *, case_sensitive: bool | None = None) -> bool:
         """Return whether this path matches the given pattern.
 
         If the pattern is relative, matching is done from the right; otherwise, the entire path is
-        matched. The recursive wildcard ``'**'`` is **not** supported by this method. Matching is
-        always case-sensitive.
+        matched. The recursive wildcard ``'**'`` is **not** supported by this method.
+
+        Args:
+            path_pattern: A :class:`str` pattern.
+            case_sensitive: If ``True``, use case-sensitive matching. If ``False``, use
+                case-insensitive matching. If ``None`` (default), use the platform default
+                (case-sensitive on POSIX).
         """
         ...
 
@@ -258,9 +262,10 @@ class PathProtocol(typing.Protocol):
         """
         ...
 
-    # NOTE: Not supported -- (Python 3.12) ``case_sensitive`` argument
     # NOTE: Not supported -- (Python 3.13) ``recurse_symlinks``
-    def glob(self, pattern: str | os.PathLike[str]) -> Iterator[Self]:
+    def glob(
+        self, pattern: str | os.PathLike[str], *, case_sensitive: bool | None = None
+    ) -> Iterator[Self]:
         r"""Iterate over this directory and yield all paths matching the provided pattern.
 
         For example, ``path.glob('*.txt')``, ``path.glob('*/foo.txt')``.
@@ -271,7 +276,10 @@ class PathProtocol(typing.Protocol):
 
         Args:
             pattern: A :class:`str` or :class:`os.PathLike` object. The pattern must be relative,
-                meaning it cannot begin with ``'/'``. Matching is case-sensitive.
+                meaning it cannot begin with ``'/'``.
+            case_sensitive: If ``True``, use case-sensitive matching. If ``False``, use
+                case-insensitive matching. If ``None`` (default), use the platform default
+                (case-sensitive on POSIX).
 
         Returns:
             A generator yielding objects of the same type as this path, corresponding to those

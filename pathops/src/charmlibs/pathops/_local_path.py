@@ -21,6 +21,7 @@ import os
 import pathlib
 import pwd
 import shutil
+import sys
 import typing
 
 from . import _constants
@@ -165,11 +166,48 @@ class LocalPath(pathlib.PosixPath):
         return bytes_written
 
     def glob(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, pattern: str | os.PathLike[str]
+        self, pattern: str | os.PathLike[str], *, case_sensitive: bool | None = None
     ) -> Iterator[Self]:
-        # On Python 3.12 and earlier, pathlib.Path.glob only accepts a str pattern.
-        # ContainerPath.glob accepts str | os.PathLike[str], so we normalise here to match.
-        return super().glob(os.fspath(pattern))
+        pat_str = os.fspath(pattern)
+        if sys.version_info >= (3, 12):
+            # pathlib.Path.glob gained case_sensitive in 3.12 and path-like pattern in 3.13.
+            return super().glob(pat_str, case_sensitive=case_sensitive)
+        # On 3.10-3.11: normalise path-like to str, then polyfill case_sensitive if needed.
+        if case_sensitive is False:
+            return self._case_insensitive_glob(pat_str)
+        return super().glob(pat_str)
+
+    def _case_insensitive_glob(self, pattern: str) -> Iterator[Self]:
+        """Case-insensitive glob polyfill for Python < 3.12."""
+        pat_path = pathlib.PurePosixPath(pattern)
+        if pat_path.is_absolute():
+            raise NotImplementedError('Non-relative patterns are unsupported.')
+        if not pat_path.parts:
+            raise ValueError(f'Unacceptable pattern: {pattern!r}')
+        yield from self._ci_glob_parts(pat_path.parts)
+
+    def _ci_glob_parts(self, pat_parts: tuple[str, ...]) -> Iterator[Self]:
+        import fnmatch as _fnmatch
+
+        first, *rest = pat_parts
+        try:
+            entries = list(self.iterdir())
+        except (PermissionError, FileNotFoundError, NotADirectoryError):
+            return
+        for entry in entries:
+            if _fnmatch.fnmatch(entry.name.lower(), first.lower()):
+                if not rest:
+                    yield entry
+                elif entry.is_dir():
+                    yield from entry._ci_glob_parts(tuple(rest))
+
+    def match(self, path_pattern: str, *, case_sensitive: bool | None = None) -> bool:
+        if sys.version_info >= (3, 12):
+            return super().match(path_pattern, case_sensitive=case_sensitive)
+        if case_sensitive is False:
+            # Polyfill: fold both path and pattern to lowercase for comparison.
+            return pathlib.PurePosixPath(str(self).lower()).match(path_pattern.lower())
+        return super().match(path_pattern)
 
     def mkdir(
         self,

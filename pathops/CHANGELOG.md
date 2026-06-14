@@ -1,3 +1,8 @@
+# Unreleased
+
+`PathProtocol.match`, `LocalPath.match`, and `ContainerPath.match` now accept a `case_sensitive` keyword argument matching `pathlib.Path.match` on Python 3.12+.
+`PathProtocol.glob`, `LocalPath.glob`, and `ContainerPath.glob` now accept a `case_sensitive` keyword argument matching `pathlib.Path.glob` on Python 3.12+.
+
 # 1.3.0 - 2 June 2026
 
 `PathProtocol.glob` and `LocalPath.glob` now accept a `str | os.PathLike[str]` pattern, matching `ContainerPath.glob` and `pathlib.Path.glob` on Python 3.13+.

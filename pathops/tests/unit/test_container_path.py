@@ -394,3 +394,79 @@ def test_methods_handle_or_reraise_pebble_errors(
 def test_not_provided(attr: str):
     assert hasattr(pathlib.Path, attr)
     assert not hasattr(ContainerPath, attr)
+
+
+def _make_file_info(
+    path: str,
+    file_type: pebble.FileType,
+    user: str = 'root',
+    group: str = 'root',
+) -> pebble.FileInfo:
+    import datetime as _datetime
+
+    return pebble.FileInfo(
+        path=path,
+        name=pathlib.PurePosixPath(path).name,
+        type=file_type,
+        size=None,
+        permissions=None,
+        last_modified=_datetime.datetime(2025, 1, 1),
+        user_id=0,
+        user=user,
+        group_id=0,
+        group=group,
+    )
+
+
+class TestMatchCaseSensitive:
+    def test_case_insensitive(self, container: ops.Container):
+        # '.TXT' matches '*.txt' case-insensitively
+        cp = ContainerPath('/foo/bar.TXT', container=container)
+        assert cp.match('*.txt', case_sensitive=False)
+
+    def test_case_sensitive(self, container: ops.Container):
+        # '.TXT' does not match '*.txt' case-sensitively
+        cp = ContainerPath('/foo/bar.TXT', container=container)
+        assert not cp.match('*.txt', case_sensitive=True)
+        assert cp.match('*.TXT', case_sensitive=True)
+
+    def test_default_is_case_sensitive(self, container: ops.Container):
+        cp = ContainerPath('/foo/bar.TXT', container=container)
+        assert not cp.match('*.txt')
+        assert cp.match('*.TXT')
+
+
+class TestGlobCaseSensitive:
+    @pytest.fixture
+    def root_with_mixed_files(
+        self, monkeypatch: pytest.MonkeyPatch, container: ops.Container
+    ) -> ContainerPath:
+        import fnmatch as _fnmatch
+
+        file_infos = [
+            _make_file_info('/root/HELLO.TXT', pebble.FileType.FILE),
+            _make_file_info('/root/world.md', pebble.FileType.FILE),
+        ]
+        root_dir_info = _make_file_info('/root', pebble.FileType.DIRECTORY)
+
+        def mock_list_files(path, pattern=None, itself=False):
+            if itself:
+                return [root_dir_info]
+            if pattern is None:
+                return file_infos
+            return [
+                f
+                for f in file_infos
+                if _fnmatch.fnmatch(pathlib.PurePosixPath(f.path).name, pattern)
+            ]
+
+        monkeypatch.setattr(container, 'list_files', mock_list_files)
+        return ContainerPath('/root', container=container)
+
+    def test_case_insensitive_matches_uppercase(self, root_with_mixed_files: ContainerPath):
+        results = sorted(p.name for p in root_with_mixed_files.glob('*.txt', case_sensitive=False))
+        assert results == ['HELLO.TXT']
+
+    def test_default_case_sensitive_misses_uppercase(self, root_with_mixed_files: ContainerPath):
+        results = list(root_with_mixed_files.glob('*.txt'))
+        assert results == []

@@ -17,8 +17,11 @@
 from __future__ import annotations
 
 import errno
+import fnmatch
+import os
 import pathlib
 import re
+import sys
 import typing
 
 import ops
@@ -27,7 +30,6 @@ from ops import pebble
 from . import _constants, _errors, _fileinfo
 
 if typing.TYPE_CHECKING:
-    import os
     from collections.abc import Generator
     from typing import Literal, TypeGuard
 
@@ -151,13 +153,23 @@ class ContainerPath:
         """
         return self._path.is_absolute()
 
-    def match(self, path_pattern: str) -> bool:
+    def match(self, path_pattern: str, *, case_sensitive: bool | None = None) -> bool:
         """Return whether this path matches the given pattern.
 
         If the pattern is relative, matching is done from the right; otherwise, the entire path is
-        matched. The recursive wildcard ``'**'`` is **not** supported by this method. Matching is
-        always case-sensitive. Only the path is matched against, the container is not considered.
+        matched. The recursive wildcard ``'**'`` is **not** supported by this method. Only the path
+        is matched against; the container is not considered.
+
+        Args:
+            path_pattern: A :class:`str` pattern.
+            case_sensitive: If ``True``, use case-sensitive matching. If ``False``, use
+                case-insensitive matching. If ``None`` (default), use the platform default
+                (case-sensitive on POSIX).
         """
+        if sys.version_info >= (3, 12):
+            return self._path.match(path_pattern, case_sensitive=case_sensitive)
+        if case_sensitive is False:
+            return pathlib.PurePosixPath(str(self._path).lower()).match(path_pattern.lower())
         return self._path.match(path_pattern)
 
     def with_name(self, name: str) -> Self:
@@ -337,7 +349,9 @@ class ContainerPath:
         for f in file_infos:
             yield self.with_segments(f.path)
 
-    def glob(self, pattern: str | os.PathLike[str]) -> Generator[Self]:
+    def glob(
+        self, pattern: str | os.PathLike[str], *, case_sensitive: bool | None = None
+    ) -> Generator[Self]:
         r"""Iterate over this directory and yield all paths matching the provided pattern.
 
         For example, ``path.glob('*.txt')``, ``path.glob('*/foo.txt')``.
@@ -347,7 +361,9 @@ class ContainerPath:
 
         Args:
             pattern: The pattern must be relative, meaning it cannot begin with ``'/'``.
-                Matching is case-sensitive.
+            case_sensitive: If ``True``, use case-sensitive matching. If ``False``, use
+                case-insensitive matching. If ``None`` (default), use the platform default
+                (case-sensitive on POSIX).
 
         Returns:
             A generator yielding :class:`ContainerPath` objects, corresponding to those of its
@@ -361,9 +377,14 @@ class ContainerPath:
             ValueError: If the pattern is invalid.
             PebbleConnectionError: If the remote container cannot be reached.
         """
-        return self._glob(pattern)
+        return self._glob(pattern, case_sensitive=case_sensitive)
 
-    def _glob(self, pattern: str | os.PathLike[str], skip_is_dir: bool = False) -> Generator[Self]:
+    def _glob(
+        self,
+        pattern: str | os.PathLike[str],
+        skip_is_dir: bool = False,
+        case_sensitive: bool | None = None,
+    ) -> Generator[Self]:
         pattern_path = pathlib.PurePosixPath(pattern)
         if pattern_path.is_absolute():
             raise NotImplementedError('Non-relative paths are unsupported.')
@@ -378,7 +399,17 @@ class ContainerPath:
             yield from ()
             return
         if not pattern_parents:
-            file_infos = self._container.list_files(self._path, pattern=pattern_itself)
+            if case_sensitive is False:
+                all_infos = self._container.list_files(self._path)
+                file_infos = [
+                    f
+                    for f in all_infos
+                    if fnmatch.fnmatch(
+                        pathlib.PurePosixPath(f.path).name.lower(), pattern_itself.lower()
+                    )
+                ]
+            else:
+                file_infos = self._container.list_files(self._path, pattern=pattern_itself)
             for f in file_infos:
                 yield self.with_segments(f.path)
             return
@@ -387,13 +418,17 @@ class ContainerPath:
         if first == '*':
             for container_path in self.iterdir():
                 if container_path.is_dir():
-                    yield from container_path._glob(next_pattern, skip_is_dir=True)
+                    yield from container_path._glob(
+                        next_pattern, skip_is_dir=True, case_sensitive=case_sensitive
+                    )
         elif '*' in first:
-            for container_path in self._glob(first):
+            for container_path in self._glob(first, case_sensitive=case_sensitive):
                 if container_path.is_dir():
-                    yield from container_path._glob(next_pattern, skip_is_dir=True)
+                    yield from container_path._glob(
+                        next_pattern, skip_is_dir=True, case_sensitive=case_sensitive
+                    )
         else:
-            yield from (self / first)._glob(next_pattern)
+            yield from (self / first)._glob(next_pattern, case_sensitive=case_sensitive)
 
     def owner(self) -> str:
         """Return the user name of the file owner.
