@@ -22,7 +22,7 @@ from . import _constants
 
 if typing.TYPE_CHECKING:
     import os
-    from collections.abc import Iterator, Sequence
+    from collections.abc import Callable, Iterator, Sequence
 
     from typing_extensions import Self
 
@@ -284,6 +284,38 @@ class PathProtocol(typing.Protocol):
                 :class:`ContainerPath`) if it uses the ``'**'`` pattern.
             PermissionError: If the local or remote user does not have appropriate permissions.
             ValueError: If the pattern is invalid.
+            PebbleConnectionError: If the remote container cannot be reached.
+        """
+        ...
+
+    def walk(
+        self,
+        top_down: bool = True,
+        on_error: Callable[[OSError], object] | None = None,
+        follow_symlinks: bool = False,
+    ) -> Iterator[tuple[Self, list[str], list[str]]]:
+        """Walk the directory tree from this directory, like :func:`os.walk`.
+
+        Yields ``(dirpath, dirnames, filenames)`` triples where ``dirpath`` is a path of the
+        same type as ``self``, ``dirnames`` is a list of subdirectory names, and ``filenames``
+        is a list of non-directory file names.
+
+        When ``top_down`` is ``True`` (default), the caller can modify ``dirnames`` in-place to
+        control which subdirectories are visited.
+
+        Args:
+            top_down: If ``True`` (default), yield each directory before its subdirectories.
+                If ``False``, yield each directory after its subdirectories.
+            on_error: If provided, called with an :class:`OSError` when a directory cannot be
+                listed. If ``None`` (default), errors are silently ignored.
+            follow_symlinks: If ``True``, follow symbolic links that point to directories. If
+                ``False`` (default), symbolic links are not followed and appear in ``filenames``.
+
+        .. warning::
+            :class:`ContainerPath` does not support ``follow_symlinks=True`` for symlink
+            detection during walk; this is a Pebble API limitation.
+
+        Raises:
             PebbleConnectionError: If the remote container cannot be reached.
         """
         ...
@@ -637,20 +669,10 @@ class PathProtocol(typing.Protocol):
 #     # recurse_symlinks: bool = False,  # added in 3.13
 # ) -> Generator[Self]: ...
 
-# walk was only added in 3.12 -- let's not support this for now, as we'd need to
-# implement the walk logic for LocalPath as well as whatever we do for ContainerPath
-# (which will also be a bit trickier being unable to distinguish symlinks as dirs)
-# While Path.walk wraps os.walk, there are still ~30 lines of pathlib code we'd need
-# to vendor for LocalPath.walk
-# def walk(
-#     self,
-#     top_down: bool = True,
-#     on_error: typing.Callable[[OSError], None] | None = None,
-#     follow_symlinks: bool = False,  # NOTE: ContainerPath runtime error if True
-# ) -> typing.Iterator[tuple[Self, list[str], list[str]]]:
-#     # TODO: if we add a follow_symlinks option to Pebble's list_files API, we can
-#     #       then support follow_symlinks=True on supported Pebble (Juju) versions
-#     ...
+# walk is in the protocol (added in the charmlibs#369 follow-up)
+# LocalPath: inherits on 3.12+, polyfill via os.scandir on 3.10-3.11.
+# ContainerPath: implemented via list_files; follow_symlinks=True checks symlink targets
+# with an extra Pebble API call per symlink entry.
 
 # def stat(self) -> os.stat_result: ...
 # stat follows symlinks to return information about the target

@@ -169,3 +169,57 @@ class TestGlobPattern:
 
         result = sorted(p.name for p in LocalPath(populated_dir).glob(_Pattern()))
         assert result == ['c.md']
+
+
+class TestWalk:
+    @pytest.fixture
+    def tree(self, tmp_path: pathlib.Path) -> pathlib.Path:
+        (tmp_path / 'a.txt').write_text('')
+        sub = tmp_path / 'sub'
+        sub.mkdir()
+        (sub / 'b.txt').write_text('')
+        return tmp_path
+
+    def test_top_down(self, tree: pathlib.Path):
+        root = LocalPath(tree)
+        results = [(d, sorted(dirs), sorted(files)) for d, dirs, files in root.walk()]
+        assert results == [
+            (root, ['sub'], ['a.txt']),
+            (root / 'sub', [], ['b.txt']),
+        ]
+
+    def test_bottom_up(self, tree: pathlib.Path):
+        root = LocalPath(tree)
+        results = [
+            (d, sorted(dirs), sorted(files)) for d, dirs, files in root.walk(top_down=False)
+        ]
+        assert results == [
+            (root / 'sub', [], ['b.txt']),
+            (root, ['sub'], ['a.txt']),
+        ]
+
+    def test_on_error(self, tmp_path: pathlib.Path):
+        errors: list[OSError] = []
+        list(LocalPath(tmp_path / 'nonexistent').walk(on_error=errors.append))
+        assert len(errors) == 1
+
+    def test_follow_symlinks_false(self, tmp_path: pathlib.Path):
+        real_dir = tmp_path / 'real'
+        real_dir.mkdir()
+        (tmp_path / 'link').symlink_to(real_dir)
+        root = LocalPath(tmp_path)
+        for d, dirs, files in root.walk(follow_symlinks=False):
+            if d == root:
+                assert 'link' in files
+                assert 'link' not in dirs
+
+    def test_yields_local_path_instances(self, tree: pathlib.Path):
+        for d, _, _ in LocalPath(tree).walk():
+            assert isinstance(d, LocalPath)
+
+    def test_top_down_dirnames_prune(self, tree: pathlib.Path):
+        visits: list[LocalPath] = []
+        for d, dirs, _ in LocalPath(tree).walk():
+            visits.append(d)
+            dirs.clear()
+        assert len(visits) == 1

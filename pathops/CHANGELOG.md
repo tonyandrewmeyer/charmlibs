@@ -1,3 +1,7 @@
+# Unreleased
+
+`PathProtocol.walk`, `LocalPath.walk`, and `ContainerPath.walk` are now available, matching `pathlib.Path.walk` added in Python 3.12. On Python 3.10-3.11, `LocalPath.walk` is polyfilled using `os.scandir`. `ContainerPath.walk` is implemented using Pebble's `list_files` API; `follow_symlinks=True` requires an extra round-trip per symlink entry.
+
 # 1.3.0 - 2 June 2026
 
 `PathProtocol.glob` and `LocalPath.glob` now accept a `str | os.PathLike[str]` pattern, matching `ContainerPath.glob` and `pathlib.Path.glob` on Python 3.13+.

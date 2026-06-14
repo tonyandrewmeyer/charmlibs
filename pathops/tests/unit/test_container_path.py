@@ -394,3 +394,116 @@ def test_methods_handle_or_reraise_pebble_errors(
 def test_not_provided(attr: str):
     assert hasattr(pathlib.Path, attr)
     assert not hasattr(ContainerPath, attr)
+
+
+def _make_file_info(
+    path: str,
+    file_type: pebble.FileType,
+    user: str = 'root',
+    group: str = 'root',
+) -> pebble.FileInfo:
+    import datetime as _datetime
+
+    return pebble.FileInfo(
+        path=path,
+        name=pathlib.PurePosixPath(path).name,
+        type=file_type,
+        size=None,
+        permissions=None,
+        last_modified=_datetime.datetime(2025, 1, 1),
+        user_id=0,
+        user=user,
+        group_id=0,
+        group=group,
+    )
+
+
+class TestWalk:
+    def test_top_down(self, monkeypatch: pytest.MonkeyPatch, container: ops.Container):
+        root_infos = [
+            _make_file_info('/root/a.txt', pebble.FileType.FILE),
+            _make_file_info('/root/sub', pebble.FileType.DIRECTORY),
+        ]
+        sub_infos = [_make_file_info('/root/sub/b.txt', pebble.FileType.FILE)]
+
+        def mock_list_files(path, pattern=None, itself=False):
+            if str(path) == '/root':
+                return root_infos
+            if str(path) == '/root/sub':
+                return sub_infos
+            return []
+
+        monkeypatch.setattr(container, 'list_files', mock_list_files)
+        root = ContainerPath('/root', container=container)
+        results = [(str(d), sorted(dirs), sorted(files)) for d, dirs, files in root.walk()]
+        assert results == [
+            ('/root', ['sub'], ['a.txt']),
+            ('/root/sub', [], ['b.txt']),
+        ]
+
+    def test_bottom_up(self, monkeypatch: pytest.MonkeyPatch, container: ops.Container):
+        root_infos = [
+            _make_file_info('/root/a.txt', pebble.FileType.FILE),
+            _make_file_info('/root/sub', pebble.FileType.DIRECTORY),
+        ]
+        sub_infos = [_make_file_info('/root/sub/b.txt', pebble.FileType.FILE)]
+
+        def mock_list_files(path, pattern=None, itself=False):
+            if str(path) == '/root':
+                return root_infos
+            if str(path) == '/root/sub':
+                return sub_infos
+            return []
+
+        monkeypatch.setattr(container, 'list_files', mock_list_files)
+        root = ContainerPath('/root', container=container)
+        results = [
+            (str(d), sorted(dirs), sorted(files)) for d, dirs, files in root.walk(top_down=False)
+        ]
+        assert results == [
+            ('/root/sub', [], ['b.txt']),
+            ('/root', ['sub'], ['a.txt']),
+        ]
+
+    def test_on_error(self, monkeypatch: pytest.MonkeyPatch, container: ops.Container):
+        errors: list[OSError] = []
+        monkeypatch.setattr(container, 'list_files', utils.raise_connection_error)
+        list(ContainerPath('/root', container=container).walk(on_error=errors.append))
+        assert len(errors) == 1
+
+    def test_yields_container_path_instances(
+        self, monkeypatch: pytest.MonkeyPatch, container: ops.Container
+    ):
+        monkeypatch.setattr(container, 'list_files', lambda *a, **kw: [])
+        for d, _, _ in ContainerPath('/root', container=container).walk():
+            assert isinstance(d, ContainerPath)
+
+    def test_symlink_follow_appears_in_dirs(
+        self, monkeypatch: pytest.MonkeyPatch, container: ops.Container
+    ):
+        symlink_info = _make_file_info('/root/link', pebble.FileType.SYMLINK)
+        dir_info = _make_file_info('/root/link', pebble.FileType.DIRECTORY)
+
+        def mock_list_files(path, pattern=None, itself=False):
+            if itself and str(path) == '/root/link':
+                return [dir_info]  # Pebble resolves the symlink when itself=True
+            if str(path) == '/root':
+                return [symlink_info]
+            return []
+
+        monkeypatch.setattr(container, 'list_files', mock_list_files)
+        root = ContainerPath('/root', container=container)
+        _, dirs, files = next(iter(root.walk(follow_symlinks=True)))
+        assert 'link' in dirs
+        assert 'link' not in files
+
+    def test_symlink_no_follow_appears_in_files(
+        self, monkeypatch: pytest.MonkeyPatch, container: ops.Container
+    ):
+        symlink_info = _make_file_info('/root/link', pebble.FileType.SYMLINK)
+
+        monkeypatch.setattr(container, 'list_files', lambda *a, **kw: [symlink_info])
+        root = ContainerPath('/root', container=container)
+        _, dirs, files = next(iter(root.walk(follow_symlinks=False)))
+        assert 'link' in files
+        assert 'link' not in dirs

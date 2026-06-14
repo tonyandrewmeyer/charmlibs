@@ -28,7 +28,7 @@ from . import _constants, _errors, _fileinfo
 
 if typing.TYPE_CHECKING:
     import os
-    from collections.abc import Generator
+    from collections.abc import Callable, Generator, Iterator
     from typing import Literal, TypeGuard
 
     from typing_extensions import Self
@@ -500,6 +500,67 @@ class ContainerPath:
                 raise
             # else: too many levels of symbolic links
         return None
+
+    def walk(
+        self,
+        top_down: bool = True,
+        on_error: Callable[[OSError], object] | None = None,
+        follow_symlinks: bool = False,
+    ) -> Iterator[tuple[Self, list[str], list[str]]]:
+        """Walk the directory tree from this directory, like :func:`os.walk`.
+
+        Args:
+            top_down: If ``True`` (default), yield each directory before its subdirectories.
+                When ``top_down`` is ``True`` the caller may modify ``dirnames`` in-place to
+                control which subdirectories are visited.
+            on_error: Called with an :class:`OSError` when a directory cannot be listed.
+            follow_symlinks: If ``True``, symlinks that point to directories are recursed into.
+                Pebble's files API requires an extra round-trip per symlink to detect this;
+                if ``False`` (default), symlinks always appear in ``filenames`` without an
+                extra call.
+
+        Raises:
+            PebbleConnectionError: If the remote container cannot be reached.
+        """
+        try:
+            file_infos = self._container.list_files(self._path)
+        except (pebble.PathError, pebble.ConnectionError) as e:
+            if on_error is not None:
+                on_error(OSError(str(e)))
+            return
+        except OSError as e:
+            if on_error is not None:
+                on_error(e)
+            return
+
+        dirnames: list[str] = []
+        filenames: list[str] = []
+        for info in file_infos:
+            name = pathlib.PurePosixPath(info.path).name
+            if info.type == pebble.FileType.DIRECTORY:
+                dirnames.append(name)
+            elif info.type == pebble.FileType.SYMLINK and follow_symlinks:
+                # Extra round-trip to see if the symlink target is a directory.
+                child = self.with_segments(info.path)
+                if child.is_dir():
+                    dirnames.append(name)
+                else:
+                    filenames.append(name)
+            else:
+                filenames.append(name)
+
+        if top_down:
+            yield self, dirnames, filenames
+            for name in dirnames:  # caller may modify dirnames in-place to prune subtrees
+                yield from (self / name).walk(
+                    top_down=top_down, on_error=on_error, follow_symlinks=follow_symlinks
+                )
+        else:
+            for name in dirnames:
+                yield from (self / name).walk(
+                    top_down=top_down, on_error=on_error, follow_symlinks=follow_symlinks
+                )
+            yield self, dirnames, filenames
 
     def rmdir(self) -> None:
         """Remove this path if it is an empty directory.

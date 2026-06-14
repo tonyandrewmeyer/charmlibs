@@ -26,7 +26,7 @@ import typing
 from . import _constants
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Iterator
+    from collections.abc import Callable, Iterator
 
     from typing_extensions import Buffer, Self
 
@@ -170,6 +170,46 @@ class LocalPath(pathlib.PosixPath):
         # On Python 3.12 and earlier, pathlib.Path.glob only accepts a str pattern.
         # ContainerPath.glob accepts str | os.PathLike[str], so we normalise here to match.
         return super().glob(os.fspath(pattern))
+
+    def walk(
+        self,
+        top_down: bool = True,
+        on_error: Callable[[OSError], object] | None = None,
+        follow_symlinks: bool = False,
+    ) -> Iterator[tuple[Self, list[str], list[str]]]:
+        """Walk the directory tree from this directory, like :func:`os.walk`."""
+        # Inline polyfill on all versions: yields `self`/`self/name` which are `Self`,
+        # so the return type is correct without casts. On 3.12+, pathlib.Path.walk would
+        # also work, but the typeshed return type is Path (not Self) which causes spurious
+        # pyright errors when used here.
+        try:
+            scan = list(os.scandir(self))
+        except OSError as e:
+            if on_error is not None:
+                on_error(e)
+            return
+
+        dirnames: list[str] = []
+        filenames: list[str] = []
+        for entry in scan:
+            try:
+                is_dir = entry.is_dir(follow_symlinks=follow_symlinks)
+            except OSError:
+                is_dir = False
+            (dirnames if is_dir else filenames).append(entry.name)
+
+        if top_down:
+            yield self, dirnames, filenames
+            for name in dirnames:  # caller may modify in-place to prune subtrees
+                yield from (self / name).walk(
+                    top_down=top_down, on_error=on_error, follow_symlinks=follow_symlinks
+                )
+        else:
+            for name in dirnames:
+                yield from (self / name).walk(
+                    top_down=top_down, on_error=on_error, follow_symlinks=follow_symlinks
+                )
+            yield self, dirnames, filenames
 
     def mkdir(
         self,
