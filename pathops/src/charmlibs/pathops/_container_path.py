@@ -395,26 +395,32 @@ class ContainerPath:
         else:
             yield from (self / first)._glob(next_pattern)
 
-    def owner(self) -> str:
+    def owner(self, *, follow_symlinks: bool = True) -> str:
         """Return the user name of the file owner.
+
+        Args:
+            follow_symlinks: If ``False``, return the owner of the symlink itself.
 
         Raises:
             FileNotFoundError: If the path does not exist.
             PebbleConnectionError: If the remote container cannot be reached.
         """
-        info = _fileinfo.from_container_path(self)  # FileNotFoundError if path doesn't exist
+        info = _fileinfo.from_container_path(self, follow_symlinks=follow_symlinks)
         user = info.user
         assert user is not None
         return user
 
-    def group(self) -> str:
+    def group(self, *, follow_symlinks: bool = True) -> str:
         """Return the group name of the file.
+
+        Args:
+            follow_symlinks: If ``False``, return the group of the symlink itself.
 
         Raises:
             FileNotFoundError: If the path does not exist.
             PebbleConnectionError: If the remote container cannot be reached.
         """
-        info = _fileinfo.from_container_path(self)  # FileNotFoundError if path doesn't exist
+        info = _fileinfo.from_container_path(self, follow_symlinks=follow_symlinks)
         group = info.group
         assert group is not None
         return group
@@ -430,25 +436,29 @@ class ContainerPath:
         """
         return self._exists_and_matches(filetype=None)
 
-    def is_dir(self) -> bool:
+    def is_dir(self, *, follow_symlinks: bool = True) -> bool:
         """Whether this path exists and is a directory.
 
-        Will follow symlinks to determine if the symlink target exists and is a directory.
+        Args:
+            follow_symlinks: If ``True`` (default), follow symlinks. If ``False``, a symlink
+                is never considered a directory.
 
         Raises:
             PebbleConnectionError: If the remote container cannot be reached.
         """
-        return self._exists_and_matches(pebble.FileType.DIRECTORY)
+        return self._exists_and_matches(pebble.FileType.DIRECTORY, follow_symlinks=follow_symlinks)
 
-    def is_file(self) -> bool:
+    def is_file(self, *, follow_symlinks: bool = True) -> bool:
         """Whether this path exists and is a regular file.
 
-        Will follow symlinks to determine if the symlink target exists and is a regular file.
+        Args:
+            follow_symlinks: If ``True`` (default), follow symlinks. If ``False``, a symlink
+                is never considered a regular file.
 
         Raises:
             PebbleConnectionError: If the remote container cannot be reached.
         """
-        return self._exists_and_matches(pebble.FileType.FILE)
+        return self._exists_and_matches(pebble.FileType.FILE, follow_symlinks=follow_symlinks)
 
     def is_fifo(self) -> bool:
         """Whether this path exists and is a named pipe (also called a FIFO).
@@ -482,17 +492,19 @@ class ContainerPath:
             return False
         return info.type == pebble.FileType.SYMLINK
 
-    def _exists_and_matches(self, filetype: pebble.FileType | None) -> bool:
-        info = self._try_get_fileinfo()
+    def _exists_and_matches(
+        self, filetype: pebble.FileType | None, follow_symlinks: bool = True
+    ) -> bool:
+        info = self._try_get_fileinfo(follow_symlinks=follow_symlinks)
         if info is None:
             return False
         if filetype is None:  # we only care if the file exists
             return True
         return info.type is filetype
 
-    def _try_get_fileinfo(self) -> pebble.FileInfo | None:
+    def _try_get_fileinfo(self, follow_symlinks: bool = True) -> pebble.FileInfo | None:
         try:
-            return _fileinfo.from_container_path(self)
+            return _fileinfo.from_container_path(self, follow_symlinks=follow_symlinks)
         except FileNotFoundError:
             pass
         except OSError as e:

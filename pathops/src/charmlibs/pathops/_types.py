@@ -288,8 +288,12 @@ class PathProtocol(typing.Protocol):
         """
         ...
 
-    def owner(self) -> str:
+    def owner(self, *, follow_symlinks: bool = True) -> str:
         """Return the user name of the file owner.
+
+        Args:
+            follow_symlinks: If ``False``, return the owner of the symlink itself rather than
+                the symlink target.
 
         Raises:
             FileNotFoundError: If the path does not exist.
@@ -297,8 +301,12 @@ class PathProtocol(typing.Protocol):
         """
         ...
 
-    def group(self) -> str:
+    def group(self, *, follow_symlinks: bool = True) -> str:
         """Return the group name of the file.
+
+        Args:
+            follow_symlinks: If ``False``, return the group of the symlink itself rather than
+                the symlink target.
 
         Raises:
             FileNotFoundError: If the path does not exist.
@@ -318,22 +326,26 @@ class PathProtocol(typing.Protocol):
         """
         ...
 
-    # NOTE: Not supported -- (Python 3.13) ``follow_symlinks`` argument (default=True)
-    def is_dir(self) -> bool:
+    def is_dir(self, *, follow_symlinks: bool = True) -> bool:
         """Whether this path exists and is a directory.
 
-        Will follow symlinks to determine if the symlink target exists and is a directory.
+        Args:
+            follow_symlinks: If ``True`` (default), follow symlinks to determine if the symlink
+                target exists and is a directory. If ``False``, a symlink will never be treated
+                as a directory.
 
         Raises:
             PebbleConnectionError: If the remote container cannot be reached.
         """
         ...
 
-    # NOTE: Not supported -- (Python 3.13) ``follow_symlinks`` argument (default=True)
-    def is_file(self) -> bool:
+    def is_file(self, *, follow_symlinks: bool = True) -> bool:
         """Whether this path exists and is a regular file.
 
-        Will follow symlinks to determine if the symlink target exists and is a regular file.
+        Args:
+            follow_symlinks: If ``True`` (default), follow symlinks to determine if the symlink
+                target exists and is a regular file. If ``False``, a symlink will never be treated
+                as a regular file.
 
         Raises:
             PebbleConnectionError: If the remote container cannot be reached.

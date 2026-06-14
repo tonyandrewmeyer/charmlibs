@@ -394,3 +394,113 @@ def test_methods_handle_or_reraise_pebble_errors(
 def test_not_provided(attr: str):
     assert hasattr(pathlib.Path, attr)
     assert not hasattr(ContainerPath, attr)
+
+
+def _make_file_info(
+    path: str,
+    file_type: pebble.FileType,
+    user: str = 'root',
+    group: str = 'root',
+) -> pebble.FileInfo:
+    import datetime as _datetime
+
+    return pebble.FileInfo(
+        path=path,
+        name=pathlib.PurePosixPath(path).name,
+        type=file_type,
+        size=None,
+        permissions=None,
+        last_modified=_datetime.datetime(2025, 1, 1),
+        user_id=0,
+        user=user,
+        group_id=0,
+        group=group,
+    )
+
+
+class TestFollowSymlinks:
+    @pytest.fixture
+    def symlink_to_file(self, monkeypatch: pytest.MonkeyPatch, container: ops.Container):
+        symlink_info = _make_file_info('/root/link', pebble.FileType.SYMLINK)
+        file_info = _make_file_info('/root/link', pebble.FileType.FILE)
+
+        def mock_list_files(path, pattern=None, itself=False):
+            if itself and str(path) == '/root/link':
+                return [file_info]
+            if not itself and str(path) == '/root' and pattern == 'link':
+                return [symlink_info]
+            return []
+
+        monkeypatch.setattr(container, 'list_files', mock_list_files)
+        return ContainerPath('/root/link', container=container)
+
+    @pytest.fixture
+    def symlink_to_dir(self, monkeypatch: pytest.MonkeyPatch, container: ops.Container):
+        symlink_info = _make_file_info('/root/link', pebble.FileType.SYMLINK)
+        dir_info = _make_file_info('/root/link', pebble.FileType.DIRECTORY)
+
+        def mock_list_files(path, pattern=None, itself=False):
+            if itself and str(path) == '/root/link':
+                return [dir_info]
+            if not itself and str(path) == '/root' and pattern == 'link':
+                return [symlink_info]
+            return []
+
+        monkeypatch.setattr(container, 'list_files', mock_list_files)
+        return ContainerPath('/root/link', container=container)
+
+    @pytest.fixture
+    def symlink_with_owners(self, monkeypatch: pytest.MonkeyPatch, container: ops.Container):
+        symlink_info = _make_file_info(
+            '/root/link', pebble.FileType.SYMLINK, user='link_user', group='link_group'
+        )
+        target_info = _make_file_info(
+            '/root/link', pebble.FileType.FILE, user='target_user', group='target_group'
+        )
+
+        def mock_list_files(path, pattern=None, itself=False):
+            if itself and str(path) == '/root/link':
+                return [target_info]
+            if not itself and str(path) == '/root' and pattern == 'link':
+                return [symlink_info]
+            return []
+
+        monkeypatch.setattr(container, 'list_files', mock_list_files)
+        return ContainerPath('/root/link', container=container)
+
+    def test_is_file_follow_true(self, symlink_to_file: ContainerPath):
+        assert symlink_to_file.is_file(follow_symlinks=True)
+
+    def test_is_file_follow_false(self, symlink_to_file: ContainerPath):
+        assert not symlink_to_file.is_file(follow_symlinks=False)
+
+    def test_is_dir_follow_true(self, symlink_to_dir: ContainerPath):
+        assert symlink_to_dir.is_dir(follow_symlinks=True)
+
+    def test_is_dir_follow_false(self, symlink_to_dir: ContainerPath):
+        assert not symlink_to_dir.is_dir(follow_symlinks=False)
+
+    def test_owner_follow_true(self, symlink_with_owners: ContainerPath):
+        assert symlink_with_owners.owner(follow_symlinks=True) == 'target_user'
+
+    def test_owner_follow_false(self, symlink_with_owners: ContainerPath):
+        assert symlink_with_owners.owner(follow_symlinks=False) == 'link_user'
+
+    def test_group_follow_true(self, symlink_with_owners: ContainerPath):
+        assert symlink_with_owners.group(follow_symlinks=True) == 'target_group'
+
+    def test_group_follow_false(self, symlink_with_owners: ContainerPath):
+        assert symlink_with_owners.group(follow_symlinks=False) == 'link_group'
+
+
+class TestParentsSlicing:
+    def test_slice(self, container: ops.Container):
+        p = ContainerPath('/a/b/c/d', container=container)
+        assert [str(x) for x in p.parents[1:]] == ['/a/b', '/a', '/']
+
+    def test_negative_index(self, container: ops.Container):
+        assert str(ContainerPath('/a/b/c/d', container=container).parents[-1]) == '/'
+
+    def test_reversed(self, container: ops.Container):
+        p = ContainerPath('/a/b/c/d', container=container)
+        assert [str(x) for x in p.parents[::-1]] == ['/', '/a', '/a/b', '/a/b/c']

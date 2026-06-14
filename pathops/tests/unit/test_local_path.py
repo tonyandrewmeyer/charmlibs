@@ -169,3 +169,68 @@ class TestGlobPattern:
 
         result = sorted(p.name for p in LocalPath(populated_dir).glob(_Pattern()))
         assert result == ['c.md']
+
+
+class TestFollowSymlinks:
+    @pytest.fixture
+    def symlink_to_file(self, tmp_path: pathlib.Path) -> pathlib.Path:
+        target = tmp_path / 'target.txt'
+        target.write_text('hello')
+        link = tmp_path / 'link.txt'
+        link.symlink_to(target)
+        return link
+
+    @pytest.fixture
+    def symlink_to_dir(self, tmp_path: pathlib.Path) -> pathlib.Path:
+        target = tmp_path / 'target_dir'
+        target.mkdir()
+        link = tmp_path / 'link_dir'
+        link.symlink_to(target)
+        return link
+
+    @pytest.fixture
+    def broken_symlink(self, tmp_path: pathlib.Path) -> pathlib.Path:
+        link = tmp_path / 'broken'
+        link.symlink_to(tmp_path / 'nonexistent')
+        return link
+
+    def test_is_file_follow_true(self, symlink_to_file: pathlib.Path):
+        assert LocalPath(symlink_to_file).is_file(follow_symlinks=True)
+
+    def test_is_file_follow_false(self, symlink_to_file: pathlib.Path):
+        assert not LocalPath(symlink_to_file).is_file(follow_symlinks=False)
+
+    def test_is_dir_follow_true(self, symlink_to_dir: pathlib.Path):
+        assert LocalPath(symlink_to_dir).is_dir(follow_symlinks=True)
+
+    def test_is_dir_follow_false(self, symlink_to_dir: pathlib.Path):
+        assert not LocalPath(symlink_to_dir).is_dir(follow_symlinks=False)
+
+    def test_owner_no_follow_on_broken_symlink(self, broken_symlink: pathlib.Path):
+        owner = LocalPath(broken_symlink).owner(follow_symlinks=False)
+        assert isinstance(owner, str) and owner
+
+    def test_owner_follow_on_broken_symlink_raises(self, broken_symlink: pathlib.Path):
+        with pytest.raises(FileNotFoundError):
+            LocalPath(broken_symlink).owner(follow_symlinks=True)
+
+    def test_group_no_follow_on_broken_symlink(self, broken_symlink: pathlib.Path):
+        group = LocalPath(broken_symlink).group(follow_symlinks=False)
+        assert isinstance(group, str) and group
+
+    def test_group_follow_on_broken_symlink_raises(self, broken_symlink: pathlib.Path):
+        with pytest.raises(FileNotFoundError):
+            LocalPath(broken_symlink).group(follow_symlinks=True)
+
+
+class TestParentsSlicing:
+    def test_slice(self):
+        p = LocalPath('/a/b/c/d')
+        assert [str(x) for x in p.parents[1:]] == ['/a/b', '/a', '/']
+
+    def test_negative_index(self):
+        assert str(LocalPath('/a/b/c/d').parents[-1]) == '/'
+
+    def test_reversed(self):
+        p = LocalPath('/a/b/c/d')
+        assert [str(x) for x in p.parents[::-1]] == ['/', '/a', '/a/b', '/a/b/c']

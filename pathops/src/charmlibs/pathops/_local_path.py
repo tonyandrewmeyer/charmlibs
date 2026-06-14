@@ -21,6 +21,8 @@ import os
 import pathlib
 import pwd
 import shutil
+import stat
+import sys
 import typing
 
 from . import _constants
@@ -170,6 +172,60 @@ class LocalPath(pathlib.PosixPath):
         # On Python 3.12 and earlier, pathlib.Path.glob only accepts a str pattern.
         # ContainerPath.glob accepts str | os.PathLike[str], so we normalise here to match.
         return super().glob(os.fspath(pattern))
+
+    def is_file(self, *, follow_symlinks: bool = True) -> bool:
+        """Return whether this path is a regular file.
+
+        Args:
+            follow_symlinks: If ``False``, a symlink is never treated as a regular file.
+        """
+        if sys.version_info >= (3, 13):
+            return super().is_file(follow_symlinks=follow_symlinks)
+        if follow_symlinks:
+            return super().is_file()
+        try:
+            return stat.S_ISREG(os.lstat(self).st_mode)
+        except OSError:
+            return False
+
+    def is_dir(self, *, follow_symlinks: bool = True) -> bool:
+        """Return whether this path is a directory.
+
+        Args:
+            follow_symlinks: If ``False``, a symlink is never treated as a directory.
+        """
+        if sys.version_info >= (3, 13):
+            return super().is_dir(follow_symlinks=follow_symlinks)
+        if follow_symlinks:
+            return super().is_dir()
+        try:
+            return stat.S_ISDIR(os.lstat(self).st_mode)
+        except OSError:
+            return False
+
+    def owner(self, *, follow_symlinks: bool = True) -> str:
+        """Return the name of the user owning this file.
+
+        Args:
+            follow_symlinks: If ``False``, return the owner of the symlink itself.
+        """
+        if sys.version_info >= (3, 13):
+            return super().owner(follow_symlinks=follow_symlinks)
+        if follow_symlinks:
+            return super().owner()
+        return pwd.getpwuid(os.lstat(self).st_uid).pw_name
+
+    def group(self, *, follow_symlinks: bool = True) -> str:
+        """Return the name of the group owning this file.
+
+        Args:
+            follow_symlinks: If ``False``, return the group of the symlink itself.
+        """
+        if sys.version_info >= (3, 13):
+            return super().group(follow_symlinks=follow_symlinks)
+        if follow_symlinks:
+            return super().group()
+        return grp.getgrgid(os.lstat(self).st_gid).gr_name
 
     def mkdir(
         self,

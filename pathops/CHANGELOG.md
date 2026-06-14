@@ -1,3 +1,10 @@
+# Unreleased
+
+`PathProtocol.is_file`, `LocalPath.is_file`, and `ContainerPath.is_file` now accept a `follow_symlinks` keyword argument matching `pathlib.Path.is_file` on Python 3.13+.
+`PathProtocol.is_dir`, `LocalPath.is_dir`, and `ContainerPath.is_dir` now accept a `follow_symlinks` keyword argument matching `pathlib.Path.is_dir` on Python 3.13+.
+`PathProtocol.owner`, `LocalPath.owner`, and `ContainerPath.owner` now accept a `follow_symlinks` keyword argument matching `pathlib.Path.owner` on Python 3.13+.
+`PathProtocol.group`, `LocalPath.group`, and `ContainerPath.group` now accept a `follow_symlinks` keyword argument matching `pathlib.Path.group` on Python 3.13+.
+
 # 1.3.0 - 2 June 2026
 
 `PathProtocol.glob` and `LocalPath.glob` now accept a `str | os.PathLike[str]` pattern, matching `ContainerPath.glob` and `pathlib.Path.glob` on Python 3.13+.
