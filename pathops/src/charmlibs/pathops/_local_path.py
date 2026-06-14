@@ -21,6 +21,7 @@ import os
 import pathlib
 import pwd
 import shutil
+import sys
 import typing
 
 from . import _constants
@@ -170,6 +171,33 @@ class LocalPath(pathlib.PosixPath):
         # On Python 3.12 and earlier, pathlib.Path.glob only accepts a str pattern.
         # ContainerPath.glob accepts str | os.PathLike[str], so we normalise here to match.
         return super().glob(os.fspath(pattern))
+
+    @classmethod
+    def from_uri(cls, uri: str) -> Self:
+        """Create a :class:`LocalPath` from a ``file://`` URI.
+
+        On Python 3.13+, delegates to :meth:`pathlib.Path.from_uri`.
+        On Python 3.10-3.12, parses the URI via :mod:`urllib.parse`.
+
+        Args:
+            uri: A ``file://`` URI such as ``'file:///etc/hosts'``.
+
+        Raises:
+            ValueError: If the URI is not a valid ``file://`` URI.
+        """
+        if sys.version_info >= (3, 13):
+            return cls(pathlib.Path.from_uri(uri))  # pyright: ignore[reportAttributeAccessIssue]
+        import urllib.parse
+
+        parsed = urllib.parse.urlparse(uri)
+        if parsed.scheme != 'file':
+            raise ValueError(f'URI scheme must be "file": {uri!r}')
+        if parsed.netloc:
+            raise ValueError(f'URI must not have an authority component: {uri!r}')
+        path_str = urllib.parse.unquote(parsed.path)
+        if not path_str.startswith('/'):
+            raise ValueError(f'URI path must be absolute: {uri!r}')
+        return cls(path_str)
 
     def mkdir(
         self,

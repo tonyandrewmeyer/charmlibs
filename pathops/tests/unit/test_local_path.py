@@ -169,3 +169,26 @@ class TestGlobPattern:
 
         result = sorted(p.name for p in LocalPath(populated_dir).glob(_Pattern()))
         assert result == ['c.md']
+
+
+class TestFromUri:
+    def test_basic(self, tmp_path: pathlib.Path):
+        uri = tmp_path.as_uri()
+        result = LocalPath.from_uri(uri)
+        assert result == LocalPath(tmp_path)
+
+    def test_percent_encoding(self):
+        result = LocalPath.from_uri('file:///etc/foo%20bar')
+        assert str(result) == '/etc/foo bar'
+
+    def test_wrong_scheme_raises(self):
+        with pytest.raises(ValueError):
+            LocalPath.from_uri('http://example.com/foo')
+
+    def test_with_authority_raises(self):
+        with pytest.raises(ValueError):
+            LocalPath.from_uri('file://host/foo')
+
+    def test_returns_local_path(self, tmp_path: pathlib.Path):
+        result = LocalPath.from_uri(tmp_path.as_uri())
+        assert isinstance(result, LocalPath)

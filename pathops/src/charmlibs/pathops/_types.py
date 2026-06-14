@@ -561,11 +561,10 @@ class PathProtocol(typing.Protocol):
 # we don't want ContainerPath to be mistakenly used like a pathlib.Path
 
 # URIs
-# this doesn't seem useful and is potentially confusing,so it won't be implemented
-# likewise, the constructor (added in 3.13) won't be implemented
-# def as_uri(self) -> str: ...
-# @classmethod
-# def from_uri(uri: str) -> Self: ...
+# as_uri / from_uri are LocalPath-only (no sensible container-URI scheme):
+#   LocalPath.from_uri is implemented as a classmethod delegating to pathlib on 3.13+,
+#   with a urllib.parse polyfill on 3.10-3.12. Not in the protocol.
+# def as_uri(self) -> str: ...  -- not implemented (confusing for ContainerPath)
 
 # def is_reserved(self) -> bool: ...
 # this will always return False with a PosixPath. Since we assume a Linux container

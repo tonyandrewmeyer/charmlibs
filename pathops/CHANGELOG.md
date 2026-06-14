@@ -1,3 +1,7 @@
+# Unreleased
+
+`LocalPath.from_uri` is now available (not in `PathProtocol`), matching `pathlib.Path.from_uri` added in Python 3.13. On Python 3.10-3.12, the behaviour is polyfilled using `urllib.parse`.
+
 # 1.3.0 - 2 June 2026
 
 `PathProtocol.glob` and `LocalPath.glob` now accept a `str | os.PathLike[str]` pattern, matching `ContainerPath.glob` and `pathlib.Path.glob` on Python 3.13+.
