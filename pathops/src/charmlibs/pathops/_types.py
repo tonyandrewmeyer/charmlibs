@@ -115,6 +115,15 @@ class PathProtocol(typing.Protocol):
         """
         ...
 
+    # NOTE: Not supported -- (Python 3.12) ``walk_up`` keyword argument
+    def is_relative_to(self, other: str | os.PathLike[str], /) -> bool:
+        """Return whether this path is relative to the ``other`` path.
+
+        Only the path is matched against; for :class:`ContainerPath`, the container is not
+        considered.
+        """
+        ...
+
     # NOTE: Not supported -- (Python 3.12) ``case_sensitive`` keyword argument
     def match(self, path_pattern: str) -> bool:
         """Return whether this path matches the given pattern.
@@ -129,6 +138,13 @@ class PathProtocol(typing.Protocol):
         """Return a new instance of the same type, with the path name replaced.
 
         The name is the last component of the path, including any suffixes.
+        """
+        ...
+
+    def with_stem(self, stem: str) -> Self:
+        """Return a new instance of the same type, with the path stem replaced.
+
+        The stem is the path name minus its last suffix.
         """
         ...
 
@@ -593,15 +609,6 @@ class PathProtocol(typing.Protocol):
 # this would not part of the protocol but could eventually be provided on
 # ContainerPath to ease compatibility with pathlib.Path on 3.12+ if we someday
 # support relative paths
-
-# def is_relative_to(self, other: _StrPath) -> Self: ...  # 3.9+
-# not part of protocol but can be provided on ContainerPath implementation
-# to ease compatibility with pathlib.Path on 3.9+
-
-# def with_stem(self, stem: str) -> Self: ...  # 3.9+
-# not part of protocol but can be provided on ContainerPath implementation
-# to ease compatibility with pathlib.Path on 3.9+
-# could be added to the protocol if we're happy for LocalPath to double as backports
 
 # def with_segments(self, *pathsegments: _StrPath) -> Self: ...
 # required for 3.12+ subclassing machinery

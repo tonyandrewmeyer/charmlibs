@@ -1,3 +1,7 @@
+# Unreleased
+
+`ContainerPath` gains `is_relative_to` and `with_stem` (Python 3.9 `pathlib` additions, already available on `LocalPath` via `pathlib.PosixPath` inheritance). Both methods are now part of `PathProtocol`.
+
 # 1.3.0 - 2 June 2026
 
 `PathProtocol.glob` and `LocalPath.glob` now accept a `str | os.PathLike[str]` pattern, matching `ContainerPath.glob` and `pathlib.Path.glob` on Python 3.13+.
