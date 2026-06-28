@@ -1,0 +1,33 @@
+repos:
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: uv run --only-group=fast-lint ruff check --fix
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+      - id: ruff-format
+        name: ruff-format
+        entry: uv run --only-group=fast-lint ruff format
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+      - id: codespell
+        name: codespell
+        entry: uv run --only-group=fast-lint codespell
+        language: system
+        types: [text]
+        require_serial: true
