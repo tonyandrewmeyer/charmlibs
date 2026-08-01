@@ -1,0 +1,57 @@
+[project]
+name = "charmlibs-snap-testing"
+description = "The charmlibs.snap_testing package."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    {name="The Charm Tech team at Canonical"},
+]
+license = "Apache-2.0"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Intended Audience :: Developers",
+    "Operating System :: POSIX :: Linux",
+    "Development Status :: 5 - Production/Stable",
+]
+dynamic = ["version"]
+dependencies = [
+    "charmlibs-snap==0.0.0.dev0",
+]
+
+[dependency-groups]
+lint = [  # installed for `just lint snap/testing` (unit, functional, and integration are also installed)
+]
+unit = [  # installed for `just unit snap/testing`
+    "pytest",
+]
+functional = []  # group required by CI, but functional tests aren't recommended for testing packages
+integration = []  # group required by CI, but integration tests aren't recommended for testing packages
+
+[project.entry-points.pytest11]
+snap_testing = "charmlibs.snap_testing._plugin"
+
+[project.urls]
+"Repository" = "https://github.com/canonical/charmlibs/tree/main/snap/testing"
+"Issues" = "https://github.com/canonical/charmlibs/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/charmlibs"]
+
+[tool.hatch.version]
+path = "src/charmlibs/snap_testing/_version.py"
+
+[tool.uv.sources]
+charmlibs-snap = { path = "../", editable = true }
+
+[tool.ruff]
+extend = "../../pyproject.toml"
+src = ["src", "tests/unit"]  # correctly sort local imports in tests
+
+[tool.pyright]
+extends = "../../pyproject.toml"
+include = ["src", "tests"]
+pythonVersion = "3.10"  # check no python > 3.10 features are used
