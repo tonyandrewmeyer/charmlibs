@@ -243,6 +243,8 @@ jobs:
           PYTHON: ${{ needs.init.outputs.min_python_version }}
           RECIPE: integration-${{ matrix.substrate }}
           TAG: ${{ matrix.tag }}
+          # Dump `juju debug-log` per model into <PACKAGE>/.logs/ via pytest-jubilant.
+          PYTEST_ADDOPTS: --juju-dump-logs .logs
         run: uvx --from rust-just just "$RECIPE" --python "$PYTHON" --tag "$TAG" "$PACKAGE"
 
       - name: Upload Charmcraft logs
@@ -252,3 +254,12 @@ jobs:
           name: ${{ needs.init.outputs.package-name }}-charmcraft-logs-${{ matrix.substrate }}-${{ matrix.tag }}
           path: /home/runner/.local/state/charmcraft/log/charmcraft-*.log
           if-no-files-found: warn  # pack.sh scripts aren't required to produce charmcraft logs (though they do currently)
+
+      - name: Upload Juju debug logs
+        if: ${{ !cancelled() && steps.integration.conclusion != 'skipped' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: ${{ needs.init.outputs.package-name }}-juju-debug-logs-${{ matrix.substrate }}-${{ matrix.tag }}
+          path: ${{ inputs.package }}/.logs/
+          if-no-files-found: ignore  # only packages using pytest-jubilant's juju_factory dump here
+          include-hidden-files: true  # .logs starts with a dot
