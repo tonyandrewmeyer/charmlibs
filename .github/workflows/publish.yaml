@@ -93,3 +93,16 @@ jobs:
           git config user.email github-actions@github.com
           git tag ${{ matrix.tag }}
           git push origin ${{ matrix.tag }}
+
+  sbom-secscan:
+    needs: [unify-inputs, build-n-publish]
+    if: ${{ needs.unify-inputs.outputs.include != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.unify-inputs.outputs.include) }}
+    uses: ./.github/workflows/sbom-secscan.yaml
+    with:
+      package: ${{ matrix.package }}
+      name: ${{ matrix.name }}
+      tag: ${{ matrix.tag }}
