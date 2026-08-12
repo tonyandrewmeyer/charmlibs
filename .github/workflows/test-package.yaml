@@ -164,6 +164,35 @@ jobs:
           PYTHON: ${{ matrix.python }}
         run: uvx --from rust-just just unit --python "$PYTHON" "$PACKAGE"
 
+  # Cross-resolution unit smoke: re-run unit tests against the lowest-direct and
+  # highest available versions of the package's declared dependencies. Charms
+  # resolve deps from their own lockfile at pack time, so a charmlib needs to
+  # keep working across the full range of dependency versions its pyproject.toml
+  # allows -- not just the one currently pinned in the package's uv.lock.
+  # continue-on-error until existing lower bounds are known-good.
+  unit-resolution:
+    needs: init
+    if: contains(fromJson(needs.init.outputs.tests), 'unit')
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        resolution: [lowest-direct, highest]
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+
+      - name: Run unit tests with --resolution=${{ matrix.resolution }}
+        env:
+          PYTHON: ${{ needs.init.outputs.min_python_version }}
+          RESOLUTION: ${{ matrix.resolution }}
+        run: uvx --from rust-just just unit --python "$PYTHON" --resolution "$RESOLUTION" "$PACKAGE"
+
   functional:
     needs: init
     if: contains(fromJson(needs.init.outputs.tests), 'functional')

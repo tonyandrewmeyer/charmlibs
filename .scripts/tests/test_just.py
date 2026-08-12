@@ -78,6 +78,71 @@ class TestUVCmd:
             'pytest',
         ]
 
+    def test_with_resolution_omits_locked(self, tmp_path: pathlib.Path):
+        (tmp_path / 'pyproject.toml').touch()
+        (tmp_path / 'uv.lock').touch()
+        result = just._uv_cmd(
+            ['pytest'], pkg_dir=tmp_path, python='3.12', groups=[], resolution='lowest-direct'
+        )
+        assert '--locked' not in result
+        assert result == [
+            'uv',
+            'run',
+            '--with-requirements',
+            self.test_reqs,
+            '--python',
+            '3.12',
+            '--resolution=lowest-direct',
+            'pytest',
+        ]
+
+    @pytest.mark.parametrize('resolution', ['highest', 'lowest', 'lowest-direct'])
+    def test_with_resolution_no_lock(self, tmp_path: pathlib.Path, resolution: str):
+        (tmp_path / 'pyproject.toml').touch()
+        result = just._uv_cmd(
+            ['pytest'], pkg_dir=tmp_path, python='3.12', groups=[], resolution=resolution
+        )
+        assert f'--resolution={resolution}' in result
+        assert '--locked' not in result
+
+
+class TestPreserveUVLock:
+    def test_restores_modified_lock(self, tmp_path: pathlib.Path):
+        lock = tmp_path / 'uv.lock'
+        lock.write_bytes(b'original')
+        with just._preserve_uv_lock(tmp_path, active=True):
+            lock.write_bytes(b'mutated')
+        assert lock.read_bytes() == b'original'
+
+    def test_leaves_unmodified_lock_untouched(self, tmp_path: pathlib.Path):
+        lock = tmp_path / 'uv.lock'
+        lock.write_bytes(b'original')
+        with just._preserve_uv_lock(tmp_path, active=True):
+            pass
+        assert lock.read_bytes() == b'original'
+
+    def test_inactive_does_not_restore(self, tmp_path: pathlib.Path):
+        lock = tmp_path / 'uv.lock'
+        lock.write_bytes(b'original')
+        with just._preserve_uv_lock(tmp_path, active=False):
+            lock.write_bytes(b'mutated')
+        assert lock.read_bytes() == b'mutated'
+
+    def test_no_lock_file_is_a_noop(self, tmp_path: pathlib.Path):
+        # active=True but no uv.lock present -- must not create one.
+        with just._preserve_uv_lock(tmp_path, active=True):
+            pass
+        assert not (tmp_path / 'uv.lock').exists()
+
+    def test_restores_on_exception(self, tmp_path: pathlib.Path):
+        lock = tmp_path / 'uv.lock'
+        lock.write_bytes(b'original')
+        with pytest.raises(RuntimeError, match='boom'):
+            with just._preserve_uv_lock(tmp_path, active=True):
+                lock.write_bytes(b'mutated')
+                raise RuntimeError('boom')
+        assert lock.read_bytes() == b'original'
+
 
 class TestDependencyGroups:
     def test_ok(self, tmp_path: pathlib.Path):
@@ -252,6 +317,19 @@ class TestPackageParser:
         args = parser.parse_args(['foo'])
         assert args.python is None
         assert args.package == 'foo'
+        assert args.resolution is None
+
+    @pytest.mark.parametrize('resolution', ['highest', 'lowest', 'lowest-direct'])
+    def test_resolution_choice(self, resolution: str):
+        parser = just._package_parser(just.unit)
+        args = parser.parse_args(['--resolution', resolution, 'foo'])
+        assert args.resolution == resolution
+
+    def test_resolution_rejects_unknown(self, capsys: pytest.CaptureFixture[str]):
+        parser = just._package_parser(just.unit)
+        with pytest.raises(SystemExit):
+            parser.parse_args(['--resolution', 'bogus', 'foo'])
+        assert 'invalid choice' in capsys.readouterr().err
 
 
 class TestRun:
