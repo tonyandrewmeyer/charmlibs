@@ -17,16 +17,20 @@
 Mirrors the spirit of ``scenario._consistency_checker``: validate at construction time,
 so a bad test setup fails loudly instead of producing a confusing result several layers down.
 
-Two of these checks would ideally reuse the real library's own validation
-(``charmlibs.snap._utils.snap_path_segment`` for names, and a channel format check), per
-design.md section 6.3. Neither helper exists in ``charmlibs.snap`` yet -- see the
-implementation log for details -- so this module has its own, deliberately narrower,
-stand-ins. Swap them for the real helpers once the library grows them.
+design.md section 6.3 asks for two checks to reuse the real library's own validation:
+``charmlibs.snap._utils.snap_path_segment`` for names, and a channel format check via
+``normalize_channel``. The fork sync (see the implementation log) brought in
+``snap_path_segment``, which this module now delegates to. ``normalize_channel`` still does not
+raise on malformed input -- it silently reformats whatever string it's given -- so there is still
+no real helper to delegate the channel check to; this module keeps its own, deliberately
+narrower, stand-in for that one.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+
+from charmlibs.snap import _utils
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -60,7 +64,11 @@ class SnapStateValidationError(Exception):
 
 
 def _is_valid_name(name: str) -> bool:
-    return bool(name) and name.strip() == name and '/' not in name and not name.isspace()
+    try:
+        _utils.snap_path_segment(name)
+    except ValueError:
+        return False
+    return True
 
 
 def _is_valid_channel(channel: str) -> bool:

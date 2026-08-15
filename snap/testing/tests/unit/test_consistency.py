@@ -14,15 +14,30 @@ class TestSnapValidation:
     def test_valid_snap_passes(self):
         consistency.validate_snap(state.Snap('prometheus', channel='2/stable'))
 
-    @pytest.mark.parametrize('name', ['', 'has/slash', ' leading-space', 'trailing-space '])
+    @pytest.mark.parametrize('name', ['', 'has/slash', '.', '..'])
     def test_invalid_name_raises(self, name: str):
         with pytest.raises(consistency.SnapStateValidationError):
             consistency.validate_snap(state.Snap(name))
 
-    @pytest.mark.parametrize('channel', ['2/garbage', '/stable', '2/stable/'])
+    def test_name_with_surrounding_whitespace_passes(self):
+        # Name validation now delegates to the real charmlibs.snap._utils.snap_path_segment
+        # (see the implementation log), which only rejects empty/blank names, '/', '.' and '..'
+        # -- not surrounding whitespace, unlike this module's original hand-rolled check.
+        consistency.validate_snap(state.Snap(' leading-space'))
+        consistency.validate_snap(state.Snap('trailing-space '))
+
+    @pytest.mark.parametrize('channel', ['2/garbage'])
     def test_invalid_channel_raises(self, channel: str):
         with pytest.raises(consistency.SnapStateValidationError):
             consistency.validate_snap(state.Snap('prometheus', channel=channel))
+
+    def test_channel_with_empty_segment_normalizes_and_passes(self):
+        # Snap.__init__ normalizes the channel via the real normalize_channel before validation
+        # ever sees it, and normalize_channel drops empty segments leniently ('/stable' ->
+        # 'latest/stable', mirroring snapd's own channel.Full) -- so these were never invalid
+        # per the real semantics, unlike what this module's original test assumed.
+        consistency.validate_snap(state.Snap('prometheus', channel='/stable'))
+        consistency.validate_snap(state.Snap('prometheus', channel='2/stable/'))
 
     def test_alias_must_name_existing_service(self):
         with pytest.raises(consistency.SnapStateValidationError):
