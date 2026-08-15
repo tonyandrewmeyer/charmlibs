@@ -12,7 +12,10 @@ source = { editable = "../" }
 functional = [{ name = "pytest" }]
 integration = []
 lint = [{ name = "typing-extensions" }]
-unit = [{ name = "pytest" }]
+unit = [
+    { name = "charmlibs-snap-testing", editable = "." },
+    { name = "pytest" },
+]
 
 [[package]]
 name = "charmlibs-snap-testing"

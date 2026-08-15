@@ -22,6 +22,7 @@ lint = [  # installed for `just lint snap` (unit, functional, and integration ar
 ]
 unit = [
     "pytest",
+    "charmlibs-snap-testing",
 ]
 functional = [
     "pytest",
@@ -43,6 +44,9 @@ packages = ["src/charmlibs"]
 
 [tool.hatch.version]
 path = "src/charmlibs/snap/_version.py"
+
+[tool.uv.sources]
+charmlibs-snap-testing = { path = "testing", editable = true }
 
 [tool.ruff]
 extend = "../pyproject.toml"
