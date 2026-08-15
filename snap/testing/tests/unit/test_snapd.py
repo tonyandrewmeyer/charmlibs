@@ -13,12 +13,12 @@ from charmlibs import snap
 from charmlibs.snap import _client
 from charmlibs.snap._errors import (
     AppNotFoundError,
+    ChangeError,
     ChannelNotAvailableError,
     NeedsClassicError,
-    NotFoundError,
     NotInstalledError,
+    NotInStoreError,
     OptionNotFoundError,
-    _InterfacesUnchangedError,
 )
 from charmlibs.snap_testing import (
     Connection,
@@ -61,7 +61,7 @@ class TestInstallPermissive:
 class TestInstallAuthoritative:
     def test_snap_not_in_store_raises(self):
         with Snapd(store=[StoreSnap('grafana')]):
-            with pytest.raises(NotFoundError):
+            with pytest.raises(NotInStoreError):
                 snap.install('prometheus')
 
     def test_channel_not_on_store_snap_raises(self):
@@ -128,7 +128,7 @@ class TestRefresh:
 class TestEnsure:
     def test_installs_when_missing(self):
         with Snapd() as snapd:
-            assert snap.ensure('prometheus', channel='2/stable') is True
+            assert snap.ensure_installed('prometheus', channel='2/stable') is True
         assert snapd.installed['prometheus'].channel == '2/stable'
         assert snapd.history == [
             state.Install(snap='prometheus', channel='2/stable', revision=None, classic=False)
@@ -136,13 +136,13 @@ class TestEnsure:
 
     def test_refreshes_on_channel_change(self):
         with Snapd([Snap('prometheus', channel='2/stable')]) as snapd:
-            assert snap.ensure('prometheus', channel='2/edge') is True
+            assert snap.ensure_installed('prometheus', channel='2/edge') is True
         assert snapd.installed['prometheus'].channel == '2/edge'
         assert isinstance(snapd.history[0], state.Refresh)
 
     def test_update_false_skips_refresh(self):
         with Snapd([Snap('prometheus', channel='2/stable')]) as snapd:
-            assert snap.ensure('prometheus', channel='2/stable', update=False) is False
+            assert snap.ensure_installed('prometheus', channel='2/stable', update=False) is False
         assert snapd.history == []
 
 
@@ -180,7 +180,7 @@ class TestHoldUnhold:
 
     def test_hold_not_installed_raises(self):
         with Snapd():
-            with pytest.raises(NotFoundError):
+            with pytest.raises(NotInstalledError):
                 snap.hold('prometheus')
 
     def test_unhold(self):
@@ -218,8 +218,12 @@ class TestServices:
                 snap.start('prometheus', 'nope')
 
     def test_start_missing_snap_raises(self):
+        # start() probes /v2/snaps/{snap} to tell "snap not installed" apart from "installed but
+        # no such service" (both raise app-not-found from /v2/apps itself), so a missing snap
+        # narrows to NotInstalledError, not the AppNotFoundError this test originally expected --
+        # see test_snapd_apps.py's TestAppNotFoundConversion for the same contract.
         with Snapd():
-            with pytest.raises(AppNotFoundError):
+            with pytest.raises(NotInstalledError):
                 snap.start('prometheus')
 
     def test_stop_disable(self):
@@ -264,7 +268,7 @@ class TestLogs:
 
     def test_missing_snap_raises_not_found(self):
         with Snapd():
-            with pytest.raises(NotFoundError):
+            with pytest.raises(NotInstalledError):
                 snap.logs('prometheus')
 
     def test_no_names_returns_all_installed(self):
@@ -347,85 +351,144 @@ class TestLifecycle:
     def test_unpatched_outside_context_raises_connection_error(self):
         # Sanity check that we're really testing against the real client outside the `with`.
         with pytest.raises(snap.ConnectionError):
-            snap.info('prometheus')
+            snap.list_one('prometheus')
 
 
 # ---------------------------------------------------------------------------
-# The endpoints below (conf, interfaces, aliases) have no caller in this fork of
-# charmlibs.snap yet -- see the implementation log. These tests exercise the double's
-# REST layer directly via charmlibs.snap._client, standing in for the not-yet-written
-# _snapd_conf/_snapd_interfaces/_snapd_aliases wrapper functions.
+# conf, interfaces and aliases: the fork sync brought in _snapd_conf/_snapd_interfaces/
+# _snapd_aliases, so these now drive the real charmlibs.snap public functions rather than
+# charmlibs.snap._client directly -- see the implementation log for what re-verifying against
+# the real wrappers found (several deviations from the original, caller-less implementation).
 # ---------------------------------------------------------------------------
 
 
 class TestConfig:
     def test_get_all(self):
         with Snapd([Snap('lxd', config={'integer': 1, 'true': True})]):
-            assert _client.get('/v2/snaps/lxd/conf') == {'integer': 1, 'true': True}
+            assert snap.get('lxd') == {'integer': 1, 'true': True}
 
     def test_get_single_key(self):
         with Snapd([Snap('lxd', config={'integer': 1, 'true': True})]):
-            assert _client.get('/v2/snaps/lxd/conf', query={'keys': 'integer'}) == {'integer': 1}
+            assert snap.get('lxd', 'integer') == {'integer': 1}
+
+    def test_get_one(self):
+        with Snapd([Snap('lxd', config={'integer': 1})]):
+            assert snap.get_one('lxd', 'integer') == 1
 
     def test_get_missing_key_raises_option_not_found(self):
         with Snapd([Snap('lxd', config={'integer': 1})]):
             with pytest.raises(OptionNotFoundError):
-                _client.get('/v2/snaps/lxd/conf', query={'keys': 'missing'})
+                snap.get('lxd', 'missing')
+
+    def test_get_not_installed_raises_not_installed(self):
+        # get() on a specific key can't tell "no such snap" from "unset key" at the conf
+        # endpoint alone (both answer option-not-found); it disambiguates by probing
+        # /v2/snaps/{name}, which is what turns this into NotInstalledError.
+        with Snapd():
+            with pytest.raises(NotInstalledError):
+                snap.get('lxd', 'missing')
 
     def test_set(self):
         with Snapd([Snap('lxd')]) as snapd:
-            _client.put('/v2/snaps/lxd/conf', body={'mykey': 'myval'})
+            snap.set('lxd', {'mykey': 'myval'})
         assert snapd.installed['lxd'].config == {'mykey': 'myval'}
         assert snapd.history == [state.ConfigSet(snap='lxd', values={'mykey': 'myval'})]
 
-    def test_unset_via_null_value(self):
+    def test_unset(self):
         with Snapd([Snap('lxd', config={'mykey': 'myval'})]) as snapd:
-            _client.put('/v2/snaps/lxd/conf', body={'mykey': None})
+            snap.unset('lxd', ['mykey'])
         assert snapd.installed['lxd'].config == {}
         assert snapd.history == [state.ConfigUnset(snap='lxd', keys=('mykey',))]
+
+    def test_set_not_installed_raises(self):
+        with Snapd():
+            with pytest.raises(NotInstalledError):
+                snap.set('lxd', {'mykey': 'myval'})
+
+    def test_core_config_survives_without_a_core_snap(self):
+        # 'system'/'core' configuration is served whether or not a 'core' snap is installed.
+        with Snapd():
+            snap.set('core', {'experimental.foo': True})
+            assert snap.get_one('core', 'experimental.foo') is True
+            snap.unset('core', ['experimental.foo'])
+            assert snap.get('core') == {}
 
 
 class TestInterfaces:
     def test_connect_and_disconnect(self):
-        plug_body = {
-            'action': 'connect',
-            'plugs': [{'snap': 'vlc', 'plug': 'mount-observe'}],
-            'slots': [{'snap': 'lxd', 'slot': 'mount-observe'}],
-        }
         with Snapd([Snap('vlc'), Snap('lxd')]) as snapd:
-            _client.post('/v2/interfaces', body=plug_body)
+            snap.connect(('vlc', 'mount-observe'), ('lxd', 'mount-observe'))
             connection = Connection(plug=('vlc', 'mount-observe'), slot=('lxd', 'mount-observe'))
             assert connection in snapd.connections
-            _client.post('/v2/interfaces', body={**plug_body, 'action': 'disconnect'})
+            snap.disconnect(('vlc', 'mount-observe'), ('lxd', 'mount-observe'))
             assert connection not in snapd.connections
 
-    def test_connect_already_connected_raises(self):
-        plug_body = {
-            'action': 'connect',
-            'plugs': [{'snap': 'vlc', 'plug': 'mount-observe'}],
-            'slots': [{'snap': 'lxd', 'slot': 'mount-observe'}],
-        }
+    def test_connect_already_connected_does_not_raise(self):
+        # snapd's connect endpoint is idempotent, unlike disconnect -- reconnecting the same
+        # plug/slot succeeds silently rather than raising. This overturns design.md section 6.2,
+        # which claimed connect() swallows an interfaces-unchanged error: the real function has
+        # no such handling, because snapd never sends one for a redundant connect.
+        with Snapd([Snap('vlc'), Snap('lxd')]) as snapd:
+            snap.connect(('vlc', 'mount-observe'), ('lxd', 'mount-observe'))
+            snap.connect(('vlc', 'mount-observe'), ('lxd', 'mount-observe'))  # Does not raise.
+        connection = Connection(plug=('vlc', 'mount-observe'), slot=('lxd', 'mount-observe'))
+        assert connection in snapd.connections
+
+    def test_disconnect_one_sided_not_connected_does_not_raise(self):
+        with Snapd([Snap('vlc')]):
+            snap.disconnect(('vlc', 'mount-observe'))  # Should not raise.
+
+    def test_disconnect_two_sided_not_connected_raises(self):
+        # The asymmetry the functional suite calls out: a fully-specified disconnect of a pair
+        # that isn't connected raises (snapd sends 'not connected', not interfaces-unchanged).
         with Snapd([Snap('vlc'), Snap('lxd')]):
-            _client.post('/v2/interfaces', body=plug_body)
-            with pytest.raises(_InterfacesUnchangedError):
-                _client.post('/v2/interfaces', body=plug_body)
+            with pytest.raises(snap.APIError):
+                snap.disconnect(('vlc', 'mount-observe'), ('lxd', 'mount-observe'))
+
+    def test_connect_not_installed_raises(self):
+        with Snapd([Snap('vlc')]):
+            with pytest.raises(NotInstalledError):
+                snap.connect(('vlc', 'mount-observe'), ('lxd', 'mount-observe'))
 
 
 class TestAliases:
     def test_alias_and_unalias(self):
         with Snapd([Snap('lxd', services={'lxc': 'active'})]) as snapd:
-            _client.post(
-                '/v2/aliases',
-                body={'action': 'alias', 'snap': 'lxd', 'app': 'lxd.lxc', 'alias': 'lxc'},
-            )
-            assert snapd.installed['lxd'].aliases == {'lxc': 'lxc'}
-            _client.post('/v2/aliases', body={'action': 'unalias', 'snap': 'lxd', 'alias': 'lxc'})
+            snap.alias('lxd', 'lxc', 'testlxc')
+            assert snapd.installed['lxd'].aliases == {'testlxc': 'lxc'}
+            snap.unalias('testlxc')
             assert snapd.installed['lxd'].aliases == {}
 
-    def test_alias_unknown_app_raises_app_not_found(self):
+    def test_alias_unknown_app_raises_change_error(self):
+        # Aliasing a nonexistent app is an async change failure, not a synchronous
+        # AppNotFoundError -- design.md section 6.2 had this wrong (see the implementation log).
         with Snapd([Snap('lxd', services={'lxc': 'active'})]):
-            with pytest.raises(AppNotFoundError):
-                _client.post(
-                    '/v2/aliases',
-                    body={'action': 'alias', 'snap': 'lxd', 'app': 'lxd.nope', 'alias': 'nope'},
-                )
+            with pytest.raises(ChangeError):
+                snap.alias('lxd', 'nope', 'testnope')
+
+    def test_alias_not_installed_raises(self):
+        with Snapd():
+            with pytest.raises(NotInstalledError):
+                snap.alias('lxd', 'lxc', 'testlxc')
+
+    def test_alias_claimed_by_another_snap_raises(self):
+        with Snapd([
+            Snap('lxd', services={'lxc': 'active'}),
+            Snap('other', services={'cmd': 'active'}),
+        ]) as snapd:
+            snap.alias('lxd', 'lxc', 'shared-alias')
+            with pytest.raises(ChangeError):
+                snap.alias('other', 'cmd', 'shared-alias')
+        assert snapd.installed['lxd'].aliases == {'shared-alias': 'lxc'}
+
+    def test_alias_named_after_installed_snap_raises(self):
+        # An alias name that equals any installed snap's own name conflicts with that snap's
+        # command namespace -- including the snap being aliased itself.
+        with Snapd([Snap('lxd', services={'lxc': 'active'})]):
+            with pytest.raises(ChangeError):
+                snap.alias('lxd', 'lxc', 'lxd')
+
+    def test_unalias_unknown_alias_raises(self):
+        with Snapd([Snap('lxd', services={'lxc': 'active'})]):
+            with pytest.raises(snap.APIError):
+                snap.unalias('never-created')

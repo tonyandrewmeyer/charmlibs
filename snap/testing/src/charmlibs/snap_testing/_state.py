@@ -273,8 +273,8 @@ class Alias(Operation):
 
 @dataclasses.dataclass(frozen=True)
 class Unalias(Operation):
-    alias: str | None
-    """The alias removed, or ``None`` if every alias for the snap was removed."""
+    alias: str
+    """The alias removed. ``unalias()`` names a single alias; there is no "clear all" form."""
 
 
 @dataclasses.dataclass(frozen=True)
