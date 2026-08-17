@@ -415,6 +415,15 @@ class Api:
                     f'snap {snap_name!r} not found', kind='app-not-found', value=snap_name
                 )
             if requested == [None]:
+                if not installed.services:
+                    # snapd answers app-not-found for a whole-snap action when the snap has no
+                    # services at all, not just for a named service it lacks -- confirmed by the
+                    # functional test_{start,stop,restart}_snap_with_no_services_raises.
+                    raise AppNotFoundError(
+                        f'snap {snap_name!r} has no services',
+                        kind='app-not-found',
+                        value=snap_name,
+                    )
                 targeted = tuple(installed.services)
             else:
                 targeted = tuple(s for s in requested if s is not None)

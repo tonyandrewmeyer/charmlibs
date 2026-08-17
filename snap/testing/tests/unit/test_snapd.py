@@ -226,6 +226,16 @@ class TestServices:
             with pytest.raises(NotInstalledError):
                 snap.start('prometheus')
 
+    def test_start_snap_with_no_services_raises(self):
+        # A whole-snap action (services=None) on a snap that has no services at all is also
+        # app-not-found, not a silent no-op -- confirmed by the functional
+        # test_start_snap_with_no_services_raises. Found while converting
+        # test_snapd_apps.py's TestAppNotFoundConversion in step 6: the double previously let
+        # this through as a successful no-op.
+        with Snapd([Snap('prometheus')]):
+            with pytest.raises(AppNotFoundError):
+                snap.start('prometheus')
+
     def test_stop_disable(self):
         seeded = Snap('prometheus', services={'prometheus': 'active'})
         with Snapd([seeded]) as snapd:
