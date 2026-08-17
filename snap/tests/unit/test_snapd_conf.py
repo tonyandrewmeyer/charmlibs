@@ -14,9 +14,11 @@ from charmlibs.snap import _snapd_conf
 from charmlibs.snap._errors import (
     BadResponseError,
     ChangeError,
+    NotInstalledError,
     OptionNotFoundError,
     _NotFoundError,
 )
+from charmlibs.snap_testing import Failure, Snap, Snapd
 from conftest import result_of
 
 if TYPE_CHECKING:
@@ -140,26 +142,24 @@ class TestGet:
 
 
 class TestGetEmptyKeys:
-    def test_get_empty_keys_returns_empty_dict(self, mock_client: MockClient):
-        mock_client.get.return_value = result_of('snap_info_hello_world.json')
-        assert _snapd_conf.get('hello-world', []) == {}
+    def test_get_empty_keys_returns_empty_dict(self):
+        # Driven through Snapd: an installed snap with no seeded config naturally answers empty.
+        with Snapd([Snap('hello-world')]):
+            assert _snapd_conf.get('hello-world', []) == {}
 
     def test_get_empty_keys_probes_installed_snap_not_conf_endpoint(self, mock_client: MockClient):
         mock_client.get.return_value = result_of('snap_info_hello_world.json')
         _snapd_conf.get('hello-world', [])
         mock_client.get.assert_called_once_with('/v2/snaps/hello-world')
 
-    def test_get_empty_keys_not_installed_raises_not_found(self, mock_client: MockClient):
-        mock_client.get.side_effect = _NotFoundError(
-            'snap not installed', kind='snap-not-found', value='hello-world'
-        )
-        with pytest.raises(_NotFoundError) as ctx:
-            _snapd_conf.get('hello-world', [])
-        # snapd's own probe error is raised unchanged: terse message, snap name in value (which
-        # str() surfaces). Not chained -- the probe's error was handled, not propagated.
-        assert ctx.value.message == 'snap not installed'
+    def test_get_empty_keys_not_installed_raises_not_found(self):
+        # Driven through Snapd: an empty double naturally answers 'snap-not-found' for the
+        # not-installed probe, narrowed the same way as everywhere else in the library.
+        with Snapd():
+            with pytest.raises(NotInstalledError) as ctx:
+                _snapd_conf.get('hello-world', [])
+        assert ctx.value.kind == 'snap-not-found'
         assert ctx.value.value == 'hello-world'
-        assert str(ctx.value) == 'snap not installed (hello-world)'
         assert ctx.value.__context__ is None
 
     def test_get_empty_keys_system_not_probed(self, mock_client: MockClient):
@@ -189,34 +189,29 @@ class TestGetAbsentSnapProbe:
     def _snap_not_found() -> _NotFoundError:
         return _NotFoundError('snap not installed', kind='snap-not-found', value='hello-world')
 
-    def test_missing_key_on_installed_snap_reraises_option_not_found(
-        self, mock_client: MockClient
-    ):
-        mock_client.get.side_effect = [
-            self._option_not_found(),
-            result_of('snap_info_hello_world.json'),
-        ]
-        with pytest.raises(OptionNotFoundError):
-            _snapd_conf.get('hello-world', ['mykey'])
-        probe_call = mock_client.get.call_args_list[1]
-        assert probe_call.args[0] == '/v2/snaps/hello-world'
+    def test_missing_key_on_installed_snap_reraises_option_not_found(self):
+        # Driven through Snapd: an installed snap's own config store naturally answers
+        # option-not-found for an unset key, and the probe (finding the snap installed) leaves
+        # it standing.
+        with Snapd([Snap('hello-world')]):
+            with pytest.raises(OptionNotFoundError):
+                _snapd_conf.get('hello-world', ['mykey'])
 
-    def test_missing_key_on_absent_snap_raises_not_found(self, mock_client: MockClient):
-        mock_client.get.side_effect = [self._option_not_found(), self._snap_not_found()]
-        with pytest.raises(_NotFoundError) as ctx:
-            _snapd_conf.get('hello-world', ['mykey'])
-        assert ctx.value.message == 'snap not installed'
+    def test_missing_key_on_absent_snap_raises_not_found(self):
+        # Driven through Snapd: the double can't tell "no such snap" from "no such key" at the
+        # conf endpoint either, so an empty double reaches the same probe-driven narrowing.
+        with Snapd():
+            with pytest.raises(NotInstalledError) as ctx:
+                _snapd_conf.get('hello-world', ['mykey'])
+        assert ctx.value.kind == 'snap-not-found'
         assert ctx.value.value == 'hello-world'
-        assert str(ctx.value) == 'snap not installed (hello-world)'
 
-    def test_missing_key_on_absent_snap_does_not_chain_option_not_found(
-        self, mock_client: MockClient
-    ):
+    def test_missing_key_on_absent_snap_does_not_chain_option_not_found(self):
         # The misleading option-not-found error snapd sent for the absent snap is suppressed
         # ('raise ... from None'), so the user sees a single traceback.
-        mock_client.get.side_effect = [self._option_not_found(), self._snap_not_found()]
-        with pytest.raises(_NotFoundError) as ctx:
-            _snapd_conf.get('hello-world', ['mykey'])
+        with Snapd():
+            with pytest.raises(_NotFoundError) as ctx:
+                _snapd_conf.get('hello-world', ['mykey'])
         assert ctx.value.__cause__ is None
         assert ctx.value.__suppress_context__
 
@@ -229,19 +224,19 @@ class TestGetAbsentSnapProbe:
         files = [frame.filename for frame in traceback.extract_tb(ctx.value.__traceback__)]
         assert not any(f.endswith('_utils.py') for f in files)
 
-    def test_get_all_empty_on_absent_snap_raises_not_found(self, mock_client: MockClient):
+    def test_get_all_empty_on_absent_snap_raises_not_found(self):
         # A bare conf GET on an absent snap is a 200 with an empty result, so the probe is
-        # what turns it into an error.
-        mock_client.get.side_effect = [{}, self._snap_not_found()]
-        with pytest.raises(_NotFoundError) as ctx:
-            _snapd_conf.get('hello-world')
-        assert ctx.value.message == 'snap not installed'
-        assert str(ctx.value) == 'snap not installed (hello-world)'
+        # what turns it into an error. Driven through Snapd: an empty double naturally answers
+        # {} at the conf endpoint for any name, installed or not.
+        with Snapd():
+            with pytest.raises(NotInstalledError) as ctx:
+                _snapd_conf.get('hello-world')
+        assert ctx.value.kind == 'snap-not-found'
         assert ctx.value.__context__ is None
 
-    def test_get_all_empty_on_installed_snap_returns_empty_dict(self, mock_client: MockClient):
-        mock_client.get.side_effect = [{}, result_of('snap_info_hello_world.json')]
-        assert _snapd_conf.get('hello-world') == {}
+    def test_get_all_empty_on_installed_snap_returns_empty_dict(self):
+        with Snapd([Snap('hello-world')]):
+            assert _snapd_conf.get('hello-world') == {}
 
     def test_get_all_nonempty_is_not_probed(self, mock_client: MockClient):
         mock_client.get.return_value = result_of('conf_lxd_all.json')
@@ -428,15 +423,19 @@ class TestConfigureHookFailure:
         status='Error',
     )
 
-    def test_set_change_error_propagates(self, mock_client: MockClient):
-        mock_client.put.side_effect = self._CHANGE_ERROR
-        with pytest.raises(ChangeError):
-            _snapd_conf.set('hello-world', {'mykey': 'myval'})
+    def test_set_change_error_propagates(self):
+        # Failure injection stands in for "the configure hook failed", a change outcome the
+        # double doesn't model hooks well enough to simulate for real.
+        failures = [Failure('set', snap='hello-world', error=self._CHANGE_ERROR)]
+        with Snapd([Snap('hello-world')], failures=failures):
+            with pytest.raises(ChangeError):
+                _snapd_conf.set('hello-world', {'mykey': 'myval'})
 
-    def test_unset_change_error_propagates(self, mock_client: MockClient):
-        mock_client.put.side_effect = self._CHANGE_ERROR
-        with pytest.raises(ChangeError):
-            _snapd_conf.unset('hello-world', ['mykey'])
+    def test_unset_change_error_propagates(self):
+        failures = [Failure('unset', snap='hello-world', error=self._CHANGE_ERROR)]
+        with Snapd([Snap('hello-world')], failures=failures):
+            with pytest.raises(ChangeError):
+                _snapd_conf.unset('hello-world', ['mykey'])
 
 
 class TestSnapNameInPath:

@@ -19,10 +19,10 @@ from charmlibs.snap._errors import (
     Error,
     NotInstalledError,
     NotInStoreError,
-    _AlreadyInstalledError,
     _NotFoundError,
     _NoUpdatesAvailableError,
 )
+from charmlibs.snap_testing import Failure, Snap, Snapd, StoreSnap
 from conftest import result_of
 
 if TYPE_CHECKING:
@@ -278,14 +278,19 @@ class TestInstall:
         assert body['channel'] == 'edge'
         assert body['revision'] == '5'
 
-    def test_install_already_installed_returns_false(self, mock_client: MockClient):
-        mock_client.post.side_effect = _AlreadyInstalledError('', kind='', value='')
-        result = _snapd.install('hello-world')
-        assert result is False
+    def test_install_already_installed_returns_false(self):
+        # Driven through Snapd (step 6 of the snaptest plan): an install() the library itself
+        # swallows (design.md 6.2) is an outcome about the resulting install state, not about
+        # the request shape, so the double's own already-installed check is what's under test.
+        with Snapd([Snap('hello-world')]):
+            assert _snapd.install('hello-world') is False
 
     def test_install_absent_from_store_raises_not_in_store(self, mock_client: MockClient):
         # An install can only fail this way because the store has nothing by that name: an
         # installed snap answers already-installed, so being installed is never in question.
+        # Not converted: this exact scenario (install() against an authoritative store that has
+        # never heard of the snap) is already covered generically, for every function that
+        # raises NotInStoreError, by test_not_found.py's test_raises_not_in_store_error.
         mock_client.post.side_effect = _NotFoundError(
             'snap not found', kind='snap-not-found', value='hello-world', status_code=404
         )
@@ -311,16 +316,24 @@ class TestRemove:
         assert body['purge'] is True
 
     @pytest.mark.parametrize('purge', [False, True])
-    def test_remove_not_installed_returns_false(self, mock_client: MockClient, purge: bool):
-        # snapd answers a remove of an absent snap with the unambiguous 'snap-not-installed'
-        # kind, so the client maps it straight to the subclass with no narrowing needed here.
-        mock_client.post.side_effect = NotInstalledError('', kind='snap-not-installed', value='')
-        assert _snapd.remove('hello-world', purge=purge) is False
+    def test_remove_not_installed_returns_false(self, purge: bool):
+        # Driven through Snapd: an empty double naturally answers 'snap-not-installed', and the
+        # outcome under test is remove()'s return value, not the kind it was reached with -- the
+        # kind itself is exercised generically by test_not_found.py's test_does_not_raise.
+        with Snapd():
+            assert _snapd.remove('hello-world', purge=purge) is False
 
-    def test_remove_other_error_propagates(self, mock_client: MockClient):
-        mock_client.post.side_effect = APIError('boom', kind='some-other-kind', value='')
-        with pytest.raises(APIError):
-            _snapd.remove('hello-world')
+    def test_remove_other_error_propagates(self):
+        # Failure injection stands in for "snapd sent an error remove() doesn't specifically
+        # handle": it must come back to the caller unchanged, not be swallowed like
+        # NotInstalledError is.
+        error = APIError('boom', kind='some-other-kind', value='')
+        with Snapd(
+            [Snap('hello-world')], failures=[Failure('remove', snap='hello-world', error=error)]
+        ):
+            with pytest.raises(APIError) as ctx:
+                _snapd.remove('hello-world')
+            assert ctx.value is error
 
 
 class TestRefresh:
@@ -356,16 +369,14 @@ class TestRefresh:
         body = mock_client.post.call_args.kwargs['body']
         assert 'classic' not in body
 
-    def test_refresh_no_updates_returns_false(self, mock_client: MockClient):
-        mock_client.post.side_effect = _NoUpdatesAvailableError(
-            'snap "hello-world" has no updates available',
-            kind='snap-no-update-available',
-            value='',
-            status_code=400,
-            status='Bad Request',
-        )
-        result = _snapd.refresh('hello-world')
-        assert result is False
+    def test_refresh_no_updates_returns_false(self):
+        # Driven through Snapd, in authoritative mode: the snap is already on the only revision
+        # its tracked channel offers, so the double's own "resolved revision == installed
+        # revision" rule (design.md 6.1) produces snap-no-update-available, not a canned error.
+        store_snap = StoreSnap('hello-world', channels={'latest/stable': 29})
+        installed = Snap('hello-world', channel='latest/stable', revision=29)
+        with Snapd([installed], store=[store_snap]):
+            assert _snapd.refresh('hello-world') is False
 
     def test_refresh_success_is_not_probed(self, mock_client: MockClient):
         _snapd.refresh('hello-world')
@@ -384,78 +395,74 @@ class TestRefreshNotInstalled:
     # snapd answers a refresh of an absent snap with an error carrying no 'kind', so there's
     # nothing in the response to key off: refresh probes /v2/snaps/{snap} to tell an absent snap
     # apart from any other failure, and raises _NotFoundError as the rest of the library does.
-    # Built fresh per call: raising an exception mutates its __context__, so a shared instance
-    # would leak chaining state between tests.
-    @staticmethod
-    def _kindless() -> APIError:
-        return APIError(
+    #
+    # Driven through Snapd (step 6 of the snaptest plan): the first two tests exercise the
+    # double's own natural not-installed response (no Failure needed -- an empty Snapd() answers
+    # 'snap-not-found' for refresh the same way real snapd does); the last three use Failure
+    # injection to stand in for "snapd sent this specific error", since they are about how the
+    # library's probe-and-reraise logic treats an error it does *not* itself construct.
+
+    def test_absent_snap_raises_not_found(self):
+        with Snapd():
+            with pytest.raises(NotInstalledError) as ctx:
+                _snapd.refresh('hello-world')
+        # Narrowed by the not-installed probe, not left as the ambiguous base type.
+        assert type(ctx.value) is NotInstalledError
+        assert ctx.value.kind == 'snap-not-found'
+        assert ctx.value.value == 'hello-world'
+
+    def test_absent_snap_does_not_chain_the_kindless_error(self):
+        # The unclassifiable error snapd sent is suppressed, so the user sees one traceback.
+        with Snapd():
+            with pytest.raises(_NotFoundError) as ctx:
+                _snapd.refresh('hello-world')
+        assert ctx.value.__cause__ is None
+        assert ctx.value.__suppress_context__
+
+    def test_installed_snap_reraises_the_original_error(self):
+        # The probe finds the snap, so the failure was something else and snapd's error stands.
+        # Built fresh per test: raising an exception mutates its __context__, so a shared
+        # instance would leak chaining state between tests.
+        original = APIError(
             'cannot refresh "hello-world": snap "hello-world" is not installed',
             kind='',
             value='',
             status_code=400,
         )
-
-    @staticmethod
-    def _snap_not_found() -> _NotFoundError:
-        return _NotFoundError('snap not installed', kind='snap-not-found', value='hello-world')
-
-    def test_absent_snap_raises_not_found(self, mock_client: MockClient):
-        mock_client.post.side_effect = self._kindless()
-        mock_client.get.side_effect = self._snap_not_found()
-        with pytest.raises(NotInstalledError) as ctx:
-            _snapd.refresh('hello-world')
-        # snapd's own probe error, narrowed: terse message, snap name in value.
-        assert type(ctx.value) is NotInstalledError
-        assert ctx.value.kind == 'snap-not-found'
-        assert ctx.value.value == 'hello-world'
-        assert str(ctx.value) == 'snap not installed (hello-world)'
-        mock_client.get.assert_called_once_with('/v2/snaps/hello-world')
-
-    def test_absent_snap_does_not_chain_the_kindless_error(self, mock_client: MockClient):
-        # The unclassifiable error snapd sent is suppressed, so the user sees one traceback.
-        mock_client.post.side_effect = self._kindless()
-        mock_client.get.side_effect = self._snap_not_found()
-        with pytest.raises(_NotFoundError) as ctx:
-            _snapd.refresh('hello-world')
-        assert ctx.value.__cause__ is None
-        assert ctx.value.__suppress_context__
-
-    def test_installed_snap_reraises_the_original_error(self, mock_client: MockClient):
-        # The probe finds the snap, so the failure was something else and snapd's error stands.
-        original = self._kindless()
-        mock_client.post.side_effect = original
-        mock_client.get.return_value = _MINIMAL_INFO_DICT
-        with pytest.raises(APIError) as ctx:
-            _snapd.refresh('hello-world')
+        failures = [Failure('refresh', snap='hello-world', error=original)]
+        with Snapd([Snap('hello-world')], failures=failures):
+            with pytest.raises(APIError) as ctx:
+                _snapd.refresh('hello-world')
         assert ctx.value is original
 
-    def test_store_sense_narrows_to_not_in_store(self, mock_client: MockClient):
+    def test_store_sense_narrows_to_not_in_store(self):
         # The case the probe exists to tell apart: refreshing an installed snap the store no
         # longer offers is the *other* sense of not-found, and snapd sends the same ambiguous
         # kind for both. The probe finds the snap installed, so the store is what's missing.
         # snapd's path to this is pinned by its own daemon/errors_test.go -- a single-snap
         # SnapActionError{Refresh: ErrSnapNotFound} unwraps to a 404 'snap-not-found'.
-        mock_client.post.side_effect = _NotFoundError(
+        original = _NotFoundError(
             'snap not found', kind='snap-not-found', value='hello-world', status_code=404
         )
-        mock_client.get.return_value = _MINIMAL_INFO_DICT
-        with pytest.raises(NotInStoreError) as ctx:
-            _snapd.refresh('hello-world')
+        failures = [Failure('refresh', snap='hello-world', error=original)]
+        with Snapd([Snap('hello-world')], failures=failures):
+            with pytest.raises(NotInStoreError) as ctx:
+                _snapd.refresh('hello-world')
         assert type(ctx.value) is NotInStoreError
         assert ctx.value.message == 'snap not found'  # Not the probe's 'snap not installed'.
         assert ctx.value.value == 'hello-world'
 
-    def test_typed_errors_are_reraised_unchanged(self, mock_client: MockClient):
+    def test_typed_errors_are_reraised_unchanged(self):
         # A refresh failure snapd does classify keeps its own type once the probe finds the snap.
         original = ChannelNotAvailableError(
             'no snap revision on specified channel',
             kind='snap-channel-not-available',
             value='',
         )
-        mock_client.post.side_effect = original
-        mock_client.get.return_value = _MINIMAL_INFO_DICT
-        with pytest.raises(ChannelNotAvailableError) as ctx:
-            _snapd.refresh('hello-world', channel='no-such-channel')
+        failures = [Failure('refresh', snap='hello-world', error=original)]
+        with Snapd([Snap('hello-world')], failures=failures):
+            with pytest.raises(ChannelNotAvailableError) as ctx:
+                _snapd.refresh('hello-world', channel='no-such-channel')
         assert ctx.value is original
 
 
@@ -483,30 +490,26 @@ class TestHold:
         _snapd.hold('hello-world')
         mock_client.get.assert_not_called()
 
-    def test_hold_not_installed(self, mock_client: MockClient):
+    def test_hold_not_installed(self):
         # As for refresh, snapd's error for holding an absent snap carries no 'kind', so hold
-        # probes /v2/snaps/{snap} and raises snapd's own _NotFoundError from that probe.
-        mock_client.post.side_effect = APIError(
-            'cannot hold "hello-world": snap "hello-world" is not installed',
-            kind='',
-            value='',
-            status_code=400,
-        )
-        mock_client.get.side_effect = _NotFoundError(
-            'snap not installed', kind='snap-not-found', value='hello-world'
-        )
-        with pytest.raises(_NotFoundError) as ctx:
-            _snapd.hold('hello-world')
-        assert str(ctx.value) == 'snap not installed (hello-world)'
+        # probes /v2/snaps/{snap} and raises snapd's own _NotFoundError from that probe. Driven
+        # through Snapd: an empty double naturally answers 'snap-not-found' for a hold, with no
+        # Failure needed.
+        with Snapd():
+            with pytest.raises(_NotFoundError) as ctx:
+                _snapd.hold('hello-world')
+        assert ctx.value.kind == 'snap-not-found'
+        assert ctx.value.value == 'hello-world'
         assert ctx.value.__suppress_context__
-        mock_client.get.assert_called_once_with('/v2/snaps/hello-world')
 
-    def test_hold_installed_reraises_the_original_error(self, mock_client: MockClient):
+    def test_hold_installed_reraises_the_original_error(self):
+        # Failure injection stands in for "snapd sent a kindless error for a reason other than
+        # not-installed" -- the probe finds the snap installed, so the original error stands.
         original = APIError('cannot hold', kind='', value='', status_code=400)
-        mock_client.post.side_effect = original
-        mock_client.get.return_value = _MINIMAL_INFO_DICT
-        with pytest.raises(APIError) as ctx:
-            _snapd.hold('hello-world')
+        failures = [Failure('hold', snap='hello-world', error=original)]
+        with Snapd([Snap('hello-world')], failures=failures):
+            with pytest.raises(APIError) as ctx:
+                _snapd.hold('hello-world')
         assert ctx.value is original
 
 
