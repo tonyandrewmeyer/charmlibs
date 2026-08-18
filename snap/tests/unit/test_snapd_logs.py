@@ -12,6 +12,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from charmlibs.snap import LogEntry, _snapd_logs
+from charmlibs.snap_testing import Snap, Snapd
 from conftest import result_of
 
 if TYPE_CHECKING:
@@ -68,18 +69,42 @@ class TestLogs:
             _snapd_logs.logs('lxd', limit=limit)
         mock_client.get_logs.assert_not_called()
 
-    def test_logs_parses_entries(self, mock_client: MockClient):
-        mock_client.get_logs.return_value = result_of('logs_lxd.json')
-        entries = _snapd_logs.logs('lxd')
-        assert len(entries) == 10
-        assert entries[0].sid == 'systemd'
-        assert isinstance(entries[0].timestamp, datetime.datetime)
+    # The five tests below are driven through charmlibs.snap_testing.Snapd (step 6 of the
+    # snaptest plan) rather than a canned fixture replayed through a mocked _client: they assert
+    # on the *parsed* LogEntry outcome, which is what a seeded double can verify by construction,
+    # not on the exact wire response shape. Seeding requires a non-empty `services` mapping --
+    # querying logs for a snap with none raises AppNotFoundError, a double-vs-library
+    # disagreement this pass found and fixed in _api.py (see IMPLEMENTATION.md).
+    #
+    # Round-tripping a seeded LogEntry through the double (which re-encodes it to a raw dict,
+    # pid included, the same way real snapd's response shapes it) and back through the real
+    # logs() is a *stronger* check than the fixture version for the pid case in particular: it
+    # fails if the double's own wire round-trip ever stops sending pid as a string, not just if
+    # logs()'s int(obj['pid']) conversion regresses.
 
-    def test_logs_pid_is_int(self, mock_client: MockClient):
-        mock_client.get_logs.return_value = result_of('logs_lxd.json')
-        entries = _snapd_logs.logs('lxd')
-        assert entries[0].pid == 1
-        assert isinstance(entries[0].pid, int)
+    def _entry(self, message: str = 'ok', *, sid: str = 'systemd', pid: int = 1) -> LogEntry:
+        return LogEntry(
+            timestamp=datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc),
+            sid=sid,
+            pid=pid,
+            message=message,
+        )
+
+    def test_logs_parses_entries(self):
+        entries = [self._entry(f'entry {i}') for i in range(10)]
+        snap_ = Snap('lxd', services={'daemon': 'active'}, logs=entries)
+        with Snapd([snap_]):
+            result = _snapd_logs.logs('lxd')
+        assert len(result) == 10
+        assert result[0].sid == 'systemd'
+        assert isinstance(result[0].timestamp, datetime.datetime)
+
+    def test_logs_pid_is_int(self):
+        snap_ = Snap('lxd', services={'daemon': 'active'}, logs=[self._entry()])
+        with Snapd([snap_]):
+            result = _snapd_logs.logs('lxd')
+        assert result[0].pid == 1
+        assert isinstance(result[0].pid, int)
 
     def test_logs_skips_malformed(self, mock_client: MockClient, caplog: LogCaptureFixture):
         mock_client.get_logs.return_value = [
@@ -98,27 +123,30 @@ class TestLogs:
         assert entries[0].pid == 2
         assert any('Skipping' in r.message for r in caplog.records)
 
-    def test_logs_empty(self, mock_client: MockClient):
-        mock_client.get_logs.return_value = []
-        assert _snapd_logs.logs('lxd') == []
+    def test_logs_empty(self):
+        with Snapd([Snap('lxd', services={'daemon': 'active'})]):
+            assert _snapd_logs.logs('lxd') == []
 
-    def test_logs_returns_log_entry_objects(self, mock_client: MockClient):
-        mock_client.get_logs.return_value = result_of('logs_lxd.json')
-        entries = _snapd_logs.logs('lxd')
-        assert all(isinstance(e, LogEntry) for e in entries)
+    def test_logs_returns_log_entry_objects(self):
+        snap_ = Snap('lxd', services={'daemon': 'active'}, logs=[self._entry()])
+        with Snapd([snap_]):
+            result = _snapd_logs.logs('lxd')
+        assert all(isinstance(e, LogEntry) for e in result)
 
-    def test_log_entry_str(self, mock_client: MockClient):
-        mock_client.get_logs.return_value = result_of('logs_lxd.json')
-        entry = _snapd_logs.logs('lxd')[0]
+    def test_log_entry_str(self):
+        snap_ = Snap('lxd', services={'daemon': 'active'}, logs=[self._entry()])
+        with Snapd([snap_]):
+            entry = _snapd_logs.logs('lxd')[0]
         s = str(entry)
         assert str(entry.timestamp) in s
         assert str(entry.sid) in s
         assert str(entry.pid) in s
         assert str(entry.message) in s
 
-    def test_log_entry_repr(self, mock_client: MockClient):
-        mock_client.get_logs.return_value = result_of('logs_lxd.json')
-        entry = _snapd_logs.logs('lxd')[0]
+    def test_log_entry_repr(self):
+        snap_ = Snap('lxd', services={'daemon': 'active'}, logs=[self._entry()])
+        with Snapd([snap_]):
+            entry = _snapd_logs.logs('lxd')[0]
         r = repr(entry)
         assert entry.__class__.__name__ in r
         assert repr(entry.timestamp) in r
