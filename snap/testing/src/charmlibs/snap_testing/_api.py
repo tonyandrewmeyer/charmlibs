@@ -470,6 +470,14 @@ class Api:
                     raise _NotFoundError(
                         f'snap {name!r} is not installed', kind='snap-not-found', value=name
                     )
+                if not installed.services:
+                    # snapd answers app-not-found for a snap with no services at all when its
+                    # logs are queried by name -- confirmed by the functional
+                    # test_logs_snap_with_no_services_raises, the same shape as /v2/apps's
+                    # whole-snap action on a service-less snap (see _app_action above).
+                    raise AppNotFoundError(
+                        f'snap "{name}" has no services', kind='app-not-found', value=name
+                    )
                 entries.extend(installed.logs)
         else:
             entries = [e for s in sorted(self.installed) for e in self.installed[s].logs]

@@ -263,7 +263,8 @@ class TestLogs:
 
     def test_returns_seeded_entries_verbatim(self):
         entries = [self._entry('one'), self._entry('two', minute=1)]
-        with Snapd([Snap('prometheus', logs=entries)]):
+        snap_ = Snap('prometheus', services={'prometheus': 'active'}, logs=entries)
+        with Snapd([snap_]):
             result = snap.logs('prometheus')
         assert [e.message for e in result] == ['one', 'two']
         assert result[0].timestamp == entries[0].timestamp
@@ -272,7 +273,8 @@ class TestLogs:
 
     def test_no_limit_filtering(self):
         entries = [self._entry(str(i), minute=i) for i in range(12)]
-        with Snapd([Snap('prometheus', logs=entries)]):
+        snap_ = Snap('prometheus', services={'prometheus': 'active'}, logs=entries)
+        with Snapd([snap_]):
             result = snap.logs('prometheus')  # default limit=10
         assert len(result) == 12  # Not sliced to 10: section 10 says logs is canned only.
 
@@ -281,7 +283,19 @@ class TestLogs:
             with pytest.raises(NotInstalledError):
                 snap.logs('prometheus')
 
+    def test_snap_with_no_services_raises_app_not_found(self):
+        # A snap with no services at all can't have logs queried by name -- confirmed by the
+        # functional test_logs_snap_with_no_services_raises. Same shape as /v2/apps's whole-snap
+        # action on a service-less snap.
+        with Snapd([Snap('prometheus')]):
+            with pytest.raises(AppNotFoundError) as ctx:
+                snap.logs('prometheus')
+        assert ctx.value.kind == 'app-not-found'
+
     def test_no_names_returns_all_installed(self):
+        # System-wide queries aggregate whatever's installed and are not scoped to one snap, so
+        # they don't raise even when the installed snaps have no services -- unlike a by-name
+        # query, there's no single snap to blame for having none.
         a = Snap('a', logs=[self._entry('from-a')])
         b = Snap('b', logs=[self._entry('from-b')])
         with Snapd([a, b]):
