@@ -284,6 +284,30 @@ class TestUVRun:
             assert 'fake-cmd' in uv_run_cmd
 
 
+class TestFormat:
+    def test_default_runs_check_fix(self):
+        with patch('just._run', return_value=0) as mock_run:
+            assert just.format([]) == 0
+            commands = [call.args[0] for call in mock_run.call_args_list]
+            assert ['uv', 'run', '--only-group=fast-lint', 'ruff', 'format', '.'] in commands
+            assert [
+                'uv',
+                'run',
+                '--only-group=fast-lint',
+                'ruff',
+                'check',
+                '--fix',
+                '.',
+            ] in commands
+
+    def test_no_fix_skips_check(self):
+        with patch('just._run', return_value=0) as mock_run:
+            assert just.format(['--no-fix']) == 0
+            commands = [call.args[0] for call in mock_run.call_args_list]
+            assert ['uv', 'run', '--only-group=fast-lint', 'ruff', 'format', '.'] in commands
+            assert not any('check' in cmd for cmd in commands)
+
+
 class TestCoverageEnv:
     def test_ok(self):
         env = just._coverage_env()

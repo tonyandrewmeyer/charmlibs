@@ -215,9 +215,16 @@ def format(argv: list[str]) -> int:  # noqa: A001
         action='store_true',
         help='Forward `--unsafe-fixes` to `ruff check`, applying fixes marked as unsafe.',
     )
+    parser.add_argument(
+        '--no-fix',
+        action='store_true',
+        help='Skip `ruff check --fix`, only running `ruff format`.',
+    )
     args = parser.parse_args(argv)
     ruff = ['uv', 'run', '--only-group=fast-lint', 'ruff']
     _run([*ruff, 'format', args.path])
+    if args.no_fix:
+        return 0
     check = [*ruff, 'check', '--fix']
     if args.unsafe_fixes:
         check.append('--unsafe-fixes')
