@@ -19,6 +19,7 @@ from charmlibs.snap._errors import (
     NotInstalledError,
     NotInStoreError,
     OptionNotFoundError,
+    _NotFoundError,
 )
 from charmlibs.snap_testing import (
     Connection,
@@ -516,3 +517,104 @@ class TestAliases:
         with Snapd([Snap('lxd', services={'lxc': 'active'})]):
             with pytest.raises(snap.APIError):
                 snap.unalias('never-created')
+
+
+# ---------------------------------------------------------------------------
+# Step 7: the double against the real-snapd oracle. Each test below pins a behaviour
+# measured against snapd 2.76 on 2026-09-06 (see the staging tree's IMPLEMENTATION.md
+# 2026-09-06 section for the probes). These assert at the raw /v2 layer, because the
+# public functions narrow all of them to NotInstalledError and hide the difference --
+# which is exactly why step 6 did not catch any of them.
+# ---------------------------------------------------------------------------
+
+
+class TestOracleRawAppsNotInstalled:
+    """Candidate 2: the two /v2/apps request forms are not the same error."""
+
+    def test_snap_alone_is_snap_not_found(self):
+        with Snapd():
+            with pytest.raises(_NotFoundError) as ctx:
+                _client.post('/v2/apps', body={'action': 'start', 'names': ['prometheus']})
+        assert ctx.value.kind == 'snap-not-found'
+        assert ctx.value.message == 'snap "prometheus" not found'
+
+    def test_snap_with_service_is_app_not_found(self):
+        with Snapd():
+            with pytest.raises(AppNotFoundError) as ctx:
+                _client.post('/v2/apps', body={'action': 'start', 'names': ['prometheus.web']})
+        assert ctx.value.kind == 'app-not-found'
+        assert ctx.value.message == 'snap "prometheus" has no service "web"'
+
+    def test_installed_snap_lacking_the_service_is_indistinguishable(self):
+        # snapd gives the same kind and message whether the snap is absent or merely lacks the
+        # service, which is why the library probes /v2/snaps to tell them apart.
+        with Snapd([Snap('prometheus', services={'prometheus': 'active'})]):
+            with pytest.raises(AppNotFoundError) as ctx:
+                _client.post('/v2/apps', body={'action': 'start', 'names': ['prometheus.web']})
+        assert ctx.value.kind == 'app-not-found'
+        assert ctx.value.message == 'snap "prometheus" has no service "web"'
+
+    def test_public_start_still_narrows_to_not_installed(self):
+        # The change above is at the raw layer only: the outcome charm tests see is unchanged.
+        with Snapd():
+            with pytest.raises(NotInstalledError):
+                snap.start('prometheus')
+
+
+class TestOracleEmptyPlug:
+    """Candidate 5: an empty plug side is an error; an empty slot side auto-resolves."""
+
+    def test_empty_plug_snap_raises(self):
+        with Snapd([Snap('prometheus')]) as snapd:
+            with pytest.raises(snap.APIError) as ctx:
+                snap.connect(('', 'metrics'), ('prometheus', 'metrics'))
+            assert snapd.connections == set()
+        assert ctx.value.message == 'cannot resolve connection, plug snap name is empty'
+
+    def test_empty_plug_name_raises(self):
+        with Snapd([Snap('prometheus')]) as snapd:
+            with pytest.raises(snap.APIError) as ctx:
+                snap.connect(('prometheus', ''), ('prometheus', 'metrics'))
+            assert snapd.connections == set()
+        assert ctx.value.message == 'cannot resolve connection, plug name is empty'
+
+    def test_plug_snap_is_checked_before_plug_name(self):
+        # Both empty: snapd reports the snap, never reaching the name check.
+        with Snapd():
+            with pytest.raises(snap.APIError) as ctx:
+                snap.connect(('', ''), ('', ''))
+        assert ctx.value.message == 'cannot resolve connection, plug snap name is empty'
+
+    def test_empty_slot_snap_still_auto_resolves(self):
+        # The asymmetry the double previously missed by treating both sides alike.
+        with Snapd([Snap('prometheus')]) as snapd:
+            snap.connect(('prometheus', 'home'), ('', 'home'))
+        assert Connection(plug=('prometheus', 'home'), slot=('', 'home')) in snapd.connections
+
+
+class TestOracleBareRefreshFollowsTrackedChannel:
+    """Candidate 1(a): a refresh with no channel follows the tracked channel, not latest."""
+
+    def test_bare_refresh_of_a_current_non_latest_track_reports_no_update(self):
+        # The shape of `juju` on the machine this was measured on: tracking 3/stable, current,
+        # and with no latest/stable in the store at all. Resolving against latest/stable would
+        # raise ChannelNotAvailableError instead of returning falsy.
+        installed = Snap('juju', channel='3/stable', revision=36041)
+        store = StoreSnap('juju', channels={'3/stable': 36041, '3/edge': 36100})
+        with Snapd([installed], store=[store]):
+            assert not snap.refresh('juju')
+
+    def test_bare_refresh_takes_the_tracked_channels_head(self):
+        installed = Snap('juju', channel='3/stable', revision=36041)
+        store = StoreSnap('juju', channels={'3/stable': 36500, 'latest/stable': 99999})
+        with Snapd([installed], store=[store]) as snapd:
+            assert snap.refresh('juju')
+        assert snapd.installed['juju'].revision == '36500'
+        assert snapd.installed['juju'].channel == '3/stable'
+
+    def test_explicit_channel_still_wins_over_the_tracked_one(self):
+        installed = Snap('juju', channel='3/stable', revision=36041)
+        store = StoreSnap('juju', channels={'3/stable': 36041, '3/edge': 36100})
+        with Snapd([installed], store=[store]) as snapd:
+            assert snap.refresh('juju', channel='3/edge')
+        assert snapd.installed['juju'].revision == '36100'

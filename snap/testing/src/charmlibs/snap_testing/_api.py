@@ -226,9 +226,19 @@ class Api:
         return {}
 
     def _resolve_from_store(
-        self, store_snap: state.StoreSnap, body: dict[str, Any]
+        self,
+        store_snap: state.StoreSnap,
+        body: dict[str, Any],
+        default_channel: str = 'latest/stable',
     ) -> tuple[str, str]:
-        """Resolve (channel, revision) for an install/refresh against an authoritative store."""
+        """Resolve (channel, revision) for an install/refresh against an authoritative store.
+
+        ``default_channel`` is what an unspecified channel means for this request. An install
+        with no channel comes from ``latest/stable``; a *refresh* with no channel follows the
+        snap's tracked channel instead -- confirmed against real snapd 2.76
+        (IMPLEMENTATION.md 2026-09-06, candidate 1(a)), where ``juju`` tracking ``3/stable``
+        with no ``latest/stable`` at all is correctly reported as having no update.
+        """
         if body.get('revision'):
             revision = str(body['revision'])
             if revision not in {str(r) for r in store_snap.channels.values()}:
@@ -238,7 +248,7 @@ class Api:
                     value=revision,
                 )
             return '', revision
-        channel = _utils.normalize_channel(body.get('channel') or 'latest/stable')
+        channel = _utils.normalize_channel(body.get('channel') or default_channel)
         if channel not in store_snap.channels:
             raise ChannelNotAvailableError(
                 f'no snap revision on channel {channel!r}',
@@ -265,7 +275,9 @@ class Api:
                 raise _NotFoundError(
                     f'snap not found: {name!r}', kind='snap-not-found', value=name
                 )
-            channel, revision = self._resolve_from_store(store_snap, body)
+            channel, revision = self._resolve_from_store(
+                store_snap, body, default_channel=installed.channel
+            )
             channel = channel or installed.channel
             if revision == installed.revision:
                 raise _NoUpdatesAvailableError(
@@ -411,8 +423,20 @@ class Api:
             self._maybe_raise(action, snap_name)
             installed = self.installed.get(snap_name)
             if installed is None:
+                # snapd distinguishes the two request forms for a snap it does not have, and
+                # answers the snap-alone form without needing a probe -- confirmed against real
+                # snapd 2.76 (IMPLEMENTATION.md 2026-09-06, candidate 2):
+                #   names=[snap]      404 snap-not-found  snap "x" not found
+                #   names=[snap.svc]  404 app-not-found   snap "x" has no service "svc"
+                if requested == [None]:
+                    raise _NotFoundError(
+                        f'snap "{snap_name}" not found', kind='snap-not-found', value=snap_name
+                    )
+                service = next(s for s in requested if s is not None)
                 raise AppNotFoundError(
-                    f'snap {snap_name!r} not found', kind='app-not-found', value=snap_name
+                    f'snap "{snap_name}" has no service "{service}"',
+                    kind='app-not-found',
+                    value=snap_name,
                 )
             if requested == [None]:
                 if not installed.services:
@@ -420,7 +444,7 @@ class Api:
                     # services at all, not just for a named service it lacks -- confirmed by the
                     # functional test_{start,stop,restart}_snap_with_no_services_raises.
                     raise AppNotFoundError(
-                        f'snap {snap_name!r} has no services',
+                        f'snap "{snap_name}" has no services',
                         kind='app-not-found',
                         value=snap_name,
                     )
@@ -430,7 +454,7 @@ class Api:
                 for service in targeted:
                     if service not in installed.services:
                         raise AppNotFoundError(
-                            f'snap {snap_name!r} has no service {service!r}',
+                            f'snap "{snap_name}" has no service "{service}"',
                             kind='app-not-found',
                             value=snap_name,
                         )
@@ -505,9 +529,22 @@ class Api:
         plug = (plug_entry['snap'], plug_entry['plug'])
         slot = (slot_entry['snap'], slot_entry['slot'])
         self._maybe_raise(action, plug[0])
+        # An empty *plug* side is rejected outright; only an empty *slot* side auto-resolves to
+        # the system snap. Both checks run before either side's not-installed check, and the
+        # plug snap is checked before the plug name -- confirmed against real snapd 2.76
+        # (IMPLEMENTATION.md 2026-09-06, candidate 5), which answers 400 with no kind and:
+        #   plugs=[{snap:'',  plug:_}]  cannot resolve connection, plug snap name is empty
+        #   plugs=[{snap:_,   plug:''}] cannot resolve connection, plug name is empty
+        if action == 'connect':
+            if not plug[0]:
+                raise APIError(
+                    'cannot resolve connection, plug snap name is empty', kind='', value=''
+                )
+            if not plug[1]:
+                raise APIError('cannot resolve connection, plug name is empty', kind='', value='')
         # snapd's response for a plug/slot snap that isn't installed carries no 'kind' either;
-        # connect()/disconnect() probe /v2/snaps/{name} (our _info) to get a typed error. Empty
-        # sides are 'auto-resolve to the system snap', never a not-installed snap to check.
+        # connect()/disconnect() probe /v2/snaps/{name} (our _info) to get a typed error. An
+        # empty slot side is 'auto-resolve to the system snap', never a snap to check.
         for snap_name in (plug[0], slot[0]):
             if snap_name and snap_name not in self.installed:
                 raise APIError(f'snap {snap_name!r} is not installed', kind='', value='')
