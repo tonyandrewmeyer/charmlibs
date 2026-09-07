@@ -56,6 +56,12 @@ if TYPE_CHECKING:
     from charmlibs import snap
 
 
+# The two names snapd's conf endpoints accept for one and the same configuration. 'core'
+# is listed first because it is the name that exists as a real snap, and so wins if a test
+# seeds both.
+_SYSTEM_CONFIG_NAMES = ('core', 'system')
+
+
 def _format_timestamp(dt: datetime.datetime) -> str:
     """Format a datetime the way ``charmlibs.snap._utils.parse_timestamp`` can read back.
 
@@ -87,7 +93,8 @@ class Api:
         self._failures: list[tuple[state.Failure, int | None]] = [(f, f.times) for f in failures]
         # 'system'/'core' config is served whether or not a 'core' snap is installed (the conf
         # endpoints treat them as aliases for the same underlying config), so it needs storage
-        # independent of `installed`. Only used when 'system'/'core' has no Snap entry of its own.
+        # independent of `installed`. Only used when neither name has a Snap entry -- once one
+        # does, that Snap owns the configuration for both names (see _config_owner).
         self._system_config: dict[str, Any] = {}
 
     # --- failure injection ---
@@ -370,7 +377,7 @@ class Api:
     def _config_set(self, name: str, body: dict[str, Any]) -> object:
         # snap-not-found is returned for a missing snap, but never for 'system'/'core': their
         # configuration is served whether or not the core snap is installed.
-        if name not in ('system', 'core') and name not in self.installed:
+        if name not in _SYSTEM_CONFIG_NAMES and name not in self.installed:
             raise _NotFoundError(
                 f'snap {name!r} is not installed', kind='snap-not-found', value=name
             )
@@ -391,19 +398,32 @@ class Api:
             self.history.append(state.ConfigUnset(snap=name, keys=unsets))
         return {}
 
+    def _config_owner(self, name: str) -> str | None:
+        """The installed snap whose config `name` reads and writes, if there is one.
+
+        'system' and 'core' are two names for one configuration, whether or not the core
+        snap is installed: a real-snapd probe answered a GET on 'system' with a message
+        naming *core*, on a machine where core was installed. So a Snap seeded under
+        either name owns the configuration under both, and 'core' wins if a test somehow
+        seeds both -- it is the name that really exists as a snap.
+        """
+        if name not in _SYSTEM_CONFIG_NAMES:
+            return name if name in self.installed else None
+        return next((n for n in _SYSTEM_CONFIG_NAMES if n in self.installed), None)
+
     def _config_store(self, name: str) -> dict[str, Any]:
-        installed = self.installed.get(name)
-        if installed is not None:
-            return dict(installed.config)
-        if name in ('system', 'core'):
+        owner = self._config_owner(name)
+        if owner is not None:
+            return dict(self.installed[owner].config)
+        if name in _SYSTEM_CONFIG_NAMES:
             return dict(self._system_config)
         return {}
 
     def _store_config(self, name: str, config: dict[str, Any]) -> None:
-        installed = self.installed.get(name)
-        if installed is not None:
-            self.installed[name] = state.replace(installed, config=config)
-        elif name in ('system', 'core'):
+        owner = self._config_owner(name)
+        if owner is not None:
+            self.installed[owner] = state.replace(self.installed[owner], config=config)
+        elif name in _SYSTEM_CONFIG_NAMES:
             self._system_config = config
 
     # --- /v2/apps ---

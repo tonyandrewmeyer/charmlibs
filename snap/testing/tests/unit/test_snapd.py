@@ -438,6 +438,34 @@ class TestConfig:
             snap.unset('core', ['experimental.foo'])
             assert snap.get('core') == {}
 
+    @pytest.mark.parametrize('seeded', ['core', 'system'])
+    @pytest.mark.parametrize('read_as', ['core', 'system'])
+    def test_system_and_core_alias_a_seeded_snap(self, seeded: str, read_as: str):
+        # Real snapd treats 'system' and 'core' as one configuration whether or not core is
+        # installed: on a machine with core installed, GET /v2/snaps/system/conf answered
+        # 'snap "core" has no "experimental" configuration option' -- naming core, for a
+        # request that named system. Seeding a Snap under either name must not split them.
+        with Snapd([Snap(seeded, config={'experimental.foo': True})]):
+            assert snap.get_one(read_as, 'experimental.foo') is True
+
+    @pytest.mark.parametrize('write_as', ['core', 'system'])
+    def test_writes_through_either_name_reach_the_seeded_snap(self, write_as: str):
+        with Snapd([Snap('core')]) as snapd:
+            snap.set(write_as, {'experimental.foo': True})
+            assert snapd.installed['core'].config == {'experimental.foo': True}
+            # Readable back under both names, not stranded in the no-core-snap store.
+            assert snap.get_one('core', 'experimental.foo') is True
+            assert snap.get_one('system', 'experimental.foo') is True
+            snap.unset(write_as, ['experimental.foo'])
+            assert snapd.installed['core'].config == {}
+
+    def test_core_wins_when_a_test_seeds_both_names(self):
+        # Nothing real can produce this state -- there is no snap called 'system' -- but the
+        # double should not silently serve two configurations if a test asks for it.
+        with Snapd([Snap('core', config={'k': 'from-core'}), Snap('system', config={'k': 'x'})]):
+            assert snap.get_one('system', 'k') == 'from-core'
+            assert snap.get_one('core', 'k') == 'from-core'
+
 
 class TestInterfaces:
     def test_connect_and_disconnect(self):
