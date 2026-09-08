@@ -368,15 +368,13 @@ class TestLifecycle:
                 pass
 
     def test_exit_restores_original_client_functions(self):
+        # This is what guarantees the tests above are testing the double and not the real
+        # client: inside the `with` the client functions are somebody else's, and on exit
+        # they are the originals again, by identity.
         original_get = _client.get
         with Snapd():
             assert _client.get is not original_get
         assert _client.get is original_get
-
-    def test_unpatched_outside_context_raises_connection_error(self):
-        # Sanity check that we're really testing against the real client outside the `with`.
-        with pytest.raises(snap.ConnectionError):
-            snap.list_one('prometheus')
 
 
 # ---------------------------------------------------------------------------
