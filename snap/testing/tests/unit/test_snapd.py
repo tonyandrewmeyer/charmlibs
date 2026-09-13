@@ -457,6 +457,47 @@ class TestConfig:
             snap.unset(write_as, ['experimental.foo'])
             assert snapd.installed['core'].config == {}
 
+    @pytest.mark.parametrize('read_as', ['core', 'system'])
+    def test_removing_core_drops_the_stored_system_config(self, read_as: str):
+        # Measured against snapd 2.76.3 in a throwaway container, which is what this needs:
+        # core cannot be removed from under a running snapd, and not even in a container
+        # until the snapd snap is installed alongside it. With core installed and
+        # refresh.retain/experimental.parallel-instances set, GET /v2/snaps/system/conf
+        # answered cloud/experimental/pki/refresh/seed/system; after `snap remove core` it
+        # answered pki/system alone. The stored tree goes with core -- including snapd's own
+        # cloud.name, refresh.hold and seed.loaded -- and only computed keys survive.
+        #
+        # The double's failure was a resurfacing one: a value stored while core was absent
+        # is shadowed by installing core, then reappears once core is removed.
+        #
+        # Only 'core' is removable -- there is no snap called 'system' -- so the name is not
+        # an axis here the way it is for reads. See test_removing_system_is_a_no_op.
+        with Snapd() as snapd:
+            snap.set('core', {'experimental.foo': True})
+            snap.install('core')
+            snap.remove('core')
+            assert snapd.installed == {}
+            assert snap.get(read_as) == {}
+
+    def test_removing_system_is_a_no_op(self):
+        # 'system' aliases core's *configuration*, not core's installed-snap entry: there is
+        # no snap by that name to remove. So the alias must not become a second way to
+        # uninstall core, and the config it owns stays put.
+        with Snapd() as snapd:
+            snap.set('core', {'experimental.foo': True})
+            snap.install('core')
+            assert snap.remove('system') is False
+            assert list(snapd.installed) == ['core']
+            snap.set('system', {'experimental.bar': True})
+            assert snap.get_one('core', 'experimental.bar') is True
+
+    def test_removing_an_ordinary_snap_leaves_the_system_config_alone(self):
+        # The clearing above is scoped to core/system, not to every removal.
+        with Snapd([Snap('prometheus')]):
+            snap.set('core', {'experimental.foo': True})
+            snap.remove('prometheus')
+            assert snap.get_one('core', 'experimental.foo') is True
+
     def test_core_wins_when_a_test_seeds_both_names(self):
         # Nothing real can produce this state -- there is no snap called 'system' -- but the
         # double should not silently serve two configurations if a test asks for it.

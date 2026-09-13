@@ -319,6 +319,15 @@ class Api:
             )
         purge = bool(body.get('purge'))
         del self.installed[name]
+        if name in _SYSTEM_CONFIG_NAMES:
+            # Real snapd drops the stored system configuration when core goes, keeping only
+            # the keys it computes. Measured in a throwaway container on snapd 2.76.3: with
+            # core installed and two options set, GET /v2/snaps/system/conf answered
+            # cloud/experimental/pki/refresh/seed/system; after `snap remove core` it
+            # answered pki/system alone, so snapd's own stored keys (cloud.name,
+            # refresh.hold, seed.loaded) went with the two the caller had set. Without this
+            # line a value stored while core was absent resurfaces after core is removed.
+            self._system_config = {}
         self.history.append(state.Remove(snap=name, purge=purge))
         return {}
 
