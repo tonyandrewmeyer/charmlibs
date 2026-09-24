@@ -12,4 +12,5 @@ Read more:
 - [Tutorial](https://canonical.com/juju/docs/charmlibs/tutorials/charmlibs/interfaces/tls-certificates/tutorial/)
 - [Library reference](https://canonical.com/juju/docs/charmlibs/reference/charmlibs/interfaces/tls-certificates/)
 - [How to configure certificate requests](https://canonical.com/juju/docs/charmlibs/how-to/charmlibs/interfaces/tls-certificates/configure-certificate-requests/)
+- [How to migrate from the Charmhub library](https://canonical.com/juju/docs/charmlibs/how-to/charmlibs/interfaces/tls-certificates/migrate-from-the-charmhub-library/)
 - [Explanation of the library design](https://canonical.com/juju/docs/charmlibs/explanation/charmlibs/interfaces/tls-certificates/design/)
