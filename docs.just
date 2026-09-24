@@ -11,7 +11,7 @@ Build the docs, (re)generating reference docs for all packages, or just those sp
 """)]
 html *packages: _diataxis_docs (_packages packages)
     uvx --with-requirements=_dev/requirements.txt --from=sphinx \
-        sphinx-build -b dirhtml -T -W --keep-going -d _dev/.doctrees -D language=en . '{{build_dir}}/html'
+        sphinx-build -b dirhtml -T -W --keep-going -d _dev/.doctrees . '{{build_dir}}/html'
 
 [doc('Copy per-library diataxis docs into the Sphinx source tree and generate toctree include files.')]
 _diataxis_docs:
@@ -61,7 +61,6 @@ _packages *packages: _package_docs
             '-T', '-W', '--keep-going',
             '-b', 'dirhtml',
             '-d', str(doctrees),
-            '-D', 'language=en',
             '-D', f'package={package}',
             # llms.txt is only generated in the final combined pass (the `html` recipe).
             # Leaving it enabled here triggers a nested base-mode build that regenerates the

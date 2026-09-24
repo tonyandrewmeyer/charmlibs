@@ -44,6 +44,8 @@ sys.path[0:0] = [
 # Project name
 project = "Charmlibs"
 author = "Canonical Ltd."
+# US English, to match the Vale spellcheck vocabulary (see docs.just's `spelling` recipe).
+language = "en-US"
 slug = 'juju/docs/charmlibs'  # Set to the path after https://canonical.com/
 html_title = f"{project} documentation"  # sidebar documentation title
 copyright = f"{datetime.date.today().year} CC-BY-SA, {author}"  # shown at the bottom of the page
