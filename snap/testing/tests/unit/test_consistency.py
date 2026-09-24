@@ -88,7 +88,7 @@ class TestWorldValidation:
         )
 
     def test_unknown_failure_action_raises(self):
-        error = snap.ConnectionError('boom', kind='charmlibs-snap-socket-not-found', value='')
+        error = snap.ConnectionError('boom')
         with pytest.raises(consistency.SnapStateValidationError, match='not a known action'):
             consistency.validate_world(
                 installed=[],
@@ -98,7 +98,7 @@ class TestWorldValidation:
             )
 
     def test_wildcard_failure_action_passes(self):
-        error = snap.ConnectionError('boom', kind='charmlibs-snap-socket-not-found', value='')
+        error = snap.ConnectionError('boom')
         consistency.validate_world(
             installed=[], store=None, connections=(), failures=[state.Failure('*', error=error)]
         )

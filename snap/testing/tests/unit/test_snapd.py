@@ -291,7 +291,7 @@ class TestLogs:
         with Snapd([Snap('prometheus')]):
             with pytest.raises(AppNotFoundError) as ctx:
                 snap.logs('prometheus')
-        assert ctx.value.kind == 'app-not-found'
+        assert ctx.value._kind == 'app-not-found'
 
     def test_no_names_returns_all_installed(self):
         # System-wide queries aggregate whatever's installed and are not scoped to one snap, so
@@ -306,9 +306,7 @@ class TestLogs:
 
 class TestFailureInjection:
     def test_wildcard_simulates_snapd_down(self):
-        error = snap.ConnectionError(
-            'Could not connect to snapd', kind='charmlibs-snap-socket-not-found', value=''
-        )
+        error = snap.ConnectionError('Could not connect to snapd')
         with Snapd(failures=[Failure('*', error=error)]) as snapd:
             with pytest.raises(snap.ConnectionError):
                 snap.install('prometheus')
@@ -316,7 +314,7 @@ class TestFailureInjection:
         assert snapd.history == []
 
     def test_scoped_failure_only_matches_named_snap(self):
-        error = snap.ConnectionError('boom', kind='charmlibs-snap-socket-not-found', value='')
+        error = snap.ConnectionError('boom')
         with Snapd(failures=[Failure('install', snap='grafana', error=error)]):
             snap.install('prometheus')  # Not scoped to prometheus: succeeds.
             with pytest.raises(snap.ConnectionError):
@@ -602,14 +600,14 @@ class TestOracleRawAppsNotInstalled:
         with Snapd():
             with pytest.raises(_NotFoundError) as ctx:
                 _client.post('/v2/apps', body={'action': 'start', 'names': ['prometheus']})
-        assert ctx.value.kind == 'snap-not-found'
+        assert ctx.value._kind == 'snap-not-found'
         assert ctx.value.message == 'snap "prometheus" not found'
 
     def test_snap_with_service_is_app_not_found(self):
         with Snapd():
             with pytest.raises(AppNotFoundError) as ctx:
                 _client.post('/v2/apps', body={'action': 'start', 'names': ['prometheus.web']})
-        assert ctx.value.kind == 'app-not-found'
+        assert ctx.value._kind == 'app-not-found'
         assert ctx.value.message == 'snap "prometheus" has no service "web"'
 
     def test_installed_snap_lacking_the_service_is_indistinguishable(self):
@@ -618,7 +616,7 @@ class TestOracleRawAppsNotInstalled:
         with Snapd([Snap('prometheus', services={'prometheus': 'active'})]):
             with pytest.raises(AppNotFoundError) as ctx:
                 _client.post('/v2/apps', body={'action': 'start', 'names': ['prometheus.web']})
-        assert ctx.value.kind == 'app-not-found'
+        assert ctx.value._kind == 'app-not-found'
         assert ctx.value.message == 'snap "prometheus" has no service "web"'
 
     def test_public_start_still_narrows_to_not_installed(self):

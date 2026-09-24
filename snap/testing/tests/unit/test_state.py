@@ -80,7 +80,7 @@ class TestStoreSnap:
 
 class TestFailure:
     def test_defaults(self):
-        error = snap.ConnectionError('boom', kind='charmlibs-snap-socket-not-found', value='')
+        error = snap.ConnectionError('boom')
         f = state.Failure('*', error=error)
         assert f.snap is None
         assert f.times is None
