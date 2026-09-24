@@ -14,6 +14,7 @@ lint = [
     { name = "typing-extensions" },
 ]
 unit = [
+    { name = "charmlibs-snap-testing" },
     { name = "pytest" },
 ]
 
@@ -23,6 +24,25 @@ unit = [
 functional = [{ name = "pytest" }]
 integration = []
 lint = [{ name = "typing-extensions" }]
+unit = [
+    { name = "charmlibs-snap-testing", editable = "testing" },
+    { name = "pytest" },
+]
+
+[[package]]
+name = "charmlibs-snap-testing"
+source = { editable = "testing" }
+dependencies = [
+    { name = "charmlibs-snap" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "charmlibs-snap", editable = "." }]
+
+[package.metadata.requires-dev]
+functional = []
+integration = []
+lint = []
 unit = [{ name = "pytest" }]
 
 [[package]]

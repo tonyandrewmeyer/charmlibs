@@ -12,4 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = '1.1.4'
+# Kept version-locked to charmlibs-snap, per .scripts/testing-versions-match.py.
+__version__ = '2.0.0.dev0'

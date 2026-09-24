@@ -12,4 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-__version__ = '1.1.4'
+"""The ``snapd`` pytest fixture, registered via the ``pytest11`` entry point."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+import pytest
+
+from ._snapd import Snapd
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+
+@pytest.fixture
+def snapd() -> Iterator[Snapd]:
+    """A zero-config, permissive-mode :class:`Snapd`, entered for the duration of the test."""
+    with Snapd() as s:
+        yield s
