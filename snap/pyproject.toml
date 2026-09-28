@@ -16,13 +16,16 @@ classifiers = [
 dynamic = ["version"]
 dependencies = []
 
+[project.optional-dependencies]
+testing = ["charmlibs-snap-testing==2.0.0"]
+
 [dependency-groups]
 lint = [  # installed for `just lint snap` (unit, functional, and integration are also installed)
     "typing_extensions",
 ]
 unit = [
     "pytest",
-    "charmlibs-snap-testing",
+    "charmlibs-snap[testing]",
 ]
 functional = [
     "pytest",

@@ -7,13 +7,15 @@ name = "charmlibs-snap"
 source = { editable = "../" }
 
 [package.metadata]
+requires-dist = [{ name = "charmlibs-snap-testing", marker = "extra == 'testing'", editable = "." }]
+provides-extras = ["testing"]
 
 [package.metadata.requires-dev]
 functional = [{ name = "pytest" }]
 integration = []
 lint = [{ name = "typing-extensions" }]
 unit = [
-    { name = "charmlibs-snap-testing", editable = "." },
+    { name = "charmlibs-snap", extras = ["testing"] },
     { name = "pytest" },
 ]
 
