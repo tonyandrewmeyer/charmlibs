@@ -203,7 +203,11 @@ class Api:
                     kind='snap-needs-classic',
                     value=name,
                 )
-            channel, revision = self._resolve_from_store(store_snap, body)
+            channel, revision = self._resolve_from_store(
+                store_snap,
+                _utils.normalize_channel(body.get('channel') or 'latest/stable'),
+                body,
+            )
             version = store_snap.version
             services: dict[str, state.ServiceStatus] = {
                 s: ('active' if s in store_snap.daemon_services else 'inactive')
@@ -235,27 +239,40 @@ class Api:
     def _resolve_from_store(
         self,
         store_snap: state.StoreSnap,
+        channel: str,
         body: dict[str, Any],
-        default_channel: str = 'latest/stable',
     ) -> tuple[str, str]:
         """Resolve (channel, revision) for an install/refresh against an authoritative store.
 
-        ``default_channel`` is what an unspecified channel means for this request. An install
-        with no channel comes from ``latest/stable``; a *refresh* with no channel follows the
-        snap's tracked channel instead -- confirmed against real snapd 2.76
-        (IMPLEMENTATION.md 2026-09-06, candidate 1(a)), where ``juju`` tracking ``3/stable``
-        with no ``latest/stable`` at all is correctly reported as having no update.
+        ``channel`` is the already-resolved channel the snap will track: for an install, the
+        requested channel (``latest/stable`` if none), and for a refresh, the requested channel
+        resolved against the tracked one (the tracked channel itself if none). A refresh with
+        no channel following the tracked channel was confirmed against real snapd 2.76, where
+        ``juju`` tracking ``3/stable`` with no ``latest/stable`` at all is correctly reported
+        as having no update.
+
+        A revision doesn't change which channel is tracked. With a channel named as well, the
+        revision must be the one on that channel: snapd reports a mismatch as
+        snap-channel-not-available ("no snap revision on specified channel"), not as
+        snap-revision-not-available, since its daemon maps a revision error that came with a
+        channel to the channel kind. With no channel named, any channel will do.
         """
         if body.get('revision'):
             revision = str(body['revision'])
-            if revision not in {str(r) for r in store_snap.channels.values()}:
+            if body.get('channel'):
+                if str(store_snap.channels.get(channel)) != revision:
+                    raise ChannelNotAvailableError(
+                        'no snap revision on specified channel',
+                        kind='snap-channel-not-available',
+                        value=channel,
+                    )
+            elif revision not in {str(r) for r in store_snap.channels.values()}:
                 raise RevisionNotAvailableError(
                     f'revision {revision} not available for snap {store_snap.name!r}',
                     kind='snap-revision-not-available',
                     value=revision,
                 )
-            return '', revision
-        channel = _utils.normalize_channel(body.get('channel') or default_channel)
+            return channel, revision
         if channel not in store_snap.channels:
             raise ChannelNotAvailableError(
                 f'no snap revision on channel {channel!r}',
@@ -276,16 +293,17 @@ class Api:
             raise APIError(
                 f'cannot refresh {name!r}: snap {name!r} is not installed', kind='', value=''
             )
+        # A channel that starts with a risk inherits the tracked track, as snapd does: 'edge'
+        # on a snap tracking 3.6/stable is 3.6/edge. An install has no track to inherit, so
+        # there the same 'edge' is latest/edge. No channel keeps the tracked one.
+        channel = _utils.resolve_channel(body.get('channel') or '', installed.channel)
         if self.store is not None:
             store_snap = self.store.get(name)
             if store_snap is None:
                 raise _NotFoundError(
                     f'snap not found: {name!r}', kind='snap-not-found', value=name
                 )
-            channel, revision = self._resolve_from_store(
-                store_snap, body, default_channel=installed.channel
-            )
-            channel = channel or installed.channel
+            channel, revision = self._resolve_from_store(store_snap, channel, body)
             if revision == installed.revision:
                 raise _NoUpdatesAvailableError(
                     f'snap {name!r} has no updates available',
@@ -295,11 +313,6 @@ class Api:
             self.installed[name] = state.replace(installed, channel=channel, revision=revision)
         else:
             # Permissive mode: refreshes always find an update; only what the call named moves.
-            channel = (
-                _utils.normalize_channel(body['channel'])
-                if body.get('channel')
-                else installed.channel
-            )
             revision = str(body['revision']) if body.get('revision') else installed.revision
             self.installed[name] = state.replace(installed, channel=channel, revision=revision)
         self.history.append(

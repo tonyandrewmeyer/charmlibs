@@ -19,6 +19,7 @@ from charmlibs.snap._errors import (
     NotInstalledError,
     NotInStoreError,
     OptionNotFoundError,
+    RevisionNotAvailableError,
     _NotFoundError,
 )
 from charmlibs.snap_testing import (
@@ -52,6 +53,13 @@ class TestInstallPermissive:
         with Snapd() as snapd:
             snap.install('prometheus', revision=7)
         assert snapd.installed['prometheus'].revision == '7'
+
+    def test_bare_risk_takes_latest_track(self):
+        # Nothing is tracked yet, so there is no track to inherit. (The double doesn't model a
+        # snap installed from a file, the one installed snap that tracks no channel.)
+        with Snapd() as snapd:
+            snap.ensure_installed('prometheus', 'edge')
+        assert snapd.installed['prometheus'].channel == 'latest/edge'
 
     def test_already_installed_returns_false_and_is_not_recorded_twice(self):
         with Snapd([Snap('prometheus')]) as snapd:
@@ -92,6 +100,47 @@ class TestInstallAuthoritative:
             'grafana', revision='100', version='9.9', services={'grafana': 'active'}
         )
 
+    def test_revision_on_named_channel_keeps_channel(self):
+        store_snap = StoreSnap('prometheus', channels={'2/stable': 100, '2/edge': 101})
+        with Snapd(store=[store_snap]) as snapd:
+            assert snap.install('prometheus', '2/edge', revision=101) is True
+        installed = snapd.installed['prometheus']
+        assert installed.channel == '2/edge'
+        assert installed.revision == '101'
+
+    def test_revision_not_on_named_channel_raises(self):
+        # 101 is in the store, just not on 2/stable: snapd reports the pairing against the
+        # channel, not the revision.
+        store_snap = StoreSnap('prometheus', channels={'2/stable': 100, '2/edge': 101})
+        with Snapd(store=[store_snap]) as snapd:
+            with pytest.raises(ChannelNotAvailableError) as ctx:
+                snap.install('prometheus', '2/stable', revision=101)
+        assert type(ctx.value) is ChannelNotAvailableError
+        assert ctx.value._kind == 'snap-channel-not-available'
+        assert snapd.installed == {}
+
+    def test_revision_without_channel_tracks_latest_stable(self):
+        # The revision can come from any channel, but the snap tracks latest/stable regardless.
+        store_snap = StoreSnap('prometheus', channels={'latest/stable': 100, '2/edge': 101})
+        with Snapd(store=[store_snap]) as snapd:
+            snap.install('prometheus', revision=101)
+        installed = snapd.installed['prometheus']
+        assert installed.channel == 'latest/stable'
+        assert installed.revision == '101'
+
+    def test_revision_on_no_channel_raises_revision_not_available(self):
+        store_snap = StoreSnap('prometheus', channels={'latest/stable': 100})
+        with Snapd(store=[store_snap]):
+            with pytest.raises(RevisionNotAvailableError):
+                snap.install('prometheus', revision=999)
+
+    def test_bare_risk_takes_latest_track(self):
+        # Nothing is tracked yet, so there is no track to inherit.
+        store_snap = StoreSnap('prometheus', channels={'latest/edge': 5, '3.6/edge': 6})
+        with Snapd(store=[store_snap]) as snapd:
+            snap.ensure_installed('prometheus', 'edge')
+        assert snapd.installed['prometheus'].channel == 'latest/edge'
+
 
 class TestRefresh:
     def test_permissive_keeps_seeded_revision_unless_named(self):
@@ -125,6 +174,59 @@ class TestRefresh:
             assert snap.refresh('prometheus') is True
         assert snapd.installed['prometheus'].revision == '101'
 
+    @pytest.mark.parametrize('store', [False, True])
+    def test_bare_risk_inherits_tracked_track(self, store: bool):
+        store_snaps = (
+            [StoreSnap('prometheus', channels={'3.6/stable': 100, '3.6/edge': 101})]
+            if store
+            else None
+        )
+        seeded = Snap('prometheus', channel='3.6/stable', revision='100')
+        with Snapd([seeded], store=store_snaps) as snapd:
+            assert snap.refresh('prometheus', 'edge') is True
+        assert snapd.installed['prometheus'].channel == '3.6/edge'
+
+    @pytest.mark.parametrize('store', [False, True])
+    def test_explicit_track_and_risk_is_taken_as_is(self, store: bool):
+        store_snaps = (
+            [StoreSnap('prometheus', channels={'3.6/stable': 100, 'latest/edge': 101})]
+            if store
+            else None
+        )
+        seeded = Snap('prometheus', channel='3.6/stable', revision='100')
+        with Snapd([seeded], store=store_snaps) as snapd:
+            snap.refresh('prometheus', 'latest/edge')
+        assert snapd.installed['prometheus'].channel == 'latest/edge'
+
+    def test_bare_track_does_not_inherit_risk(self):
+        with Snapd([Snap('prometheus', channel='3.6/edge')]) as snapd:
+            snap.refresh('prometheus', '4.0')
+        assert snapd.installed['prometheus'].channel == '4.0/stable'
+
+    def test_authoritative_revision_on_named_channel(self):
+        store_snap = StoreSnap('prometheus', channels={'2/stable': 100, '2/edge': 101})
+        seeded = Snap('prometheus', channel='2/stable', revision='100')
+        with Snapd([seeded], store=[store_snap]) as snapd:
+            snap.refresh('prometheus', '2/edge', revision=101)
+        assert snapd.installed['prometheus'].channel == '2/edge'
+        assert snapd.installed['prometheus'].revision == '101'
+
+    def test_authoritative_revision_not_on_named_channel_raises(self):
+        store_snap = StoreSnap('prometheus', channels={'2/stable': 100, '2/edge': 101})
+        seeded = Snap('prometheus', channel='2/edge', revision='101')
+        with Snapd([seeded], store=[store_snap]) as snapd:
+            with pytest.raises(ChannelNotAvailableError):
+                snap.refresh('prometheus', '2/beta', revision=100)
+        assert snapd.installed['prometheus'] == seeded
+
+    def test_authoritative_revision_without_channel_keeps_tracking(self):
+        store_snap = StoreSnap('prometheus', channels={'2/stable': 100, '2/edge': 101})
+        seeded = Snap('prometheus', channel='2/stable', revision='100')
+        with Snapd([seeded], store=[store_snap]) as snapd:
+            snap.refresh('prometheus', revision=101)
+        assert snapd.installed['prometheus'].channel == '2/stable'
+        assert snapd.installed['prometheus'].revision == '101'
+
 
 class TestEnsure:
     def test_installs_when_missing(self):
@@ -140,6 +242,15 @@ class TestEnsure:
             assert snap.ensure_installed('prometheus', channel='2/edge') is True
         assert snapd.installed['prometheus'].channel == '2/edge'
         assert isinstance(snapd.history[0], state.Refresh)
+
+    def test_bare_risk_inherits_tracked_track(self):
+        with Snapd([Snap('prometheus', channel='3.6/stable')]) as snapd:
+            assert snap.ensure_installed('prometheus', 'edge') is True
+            # Now on the channel ensure_installed resolves 'edge' to, so asking again with
+            # update=False is a no-op rather than another refresh.
+            assert snap.ensure_installed('prometheus', 'edge', update=False) is False
+        assert snapd.installed['prometheus'].channel == '3.6/edge'
+        assert len(snapd.history) == 1
 
     def test_update_false_skips_refresh(self):
         with Snapd([Snap('prometheus', channel='2/stable')]) as snapd:
