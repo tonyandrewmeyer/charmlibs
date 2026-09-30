@@ -34,7 +34,7 @@ Remove the library from the `charm-libs` section of `charmcraft.yaml`:
 -    version: "4"
 ```
 
-Do this before you delete `lib/charms/tls_certificates_interface/`, because `charmcraft fetch-libs` puts the vendored copy back on the next build otherwise, and your charm ends up shipping both.
+Remove the entry as well as deleting `lib/charms/tls_certificates_interface/`. `charmcraft pack` downloads any library listed in `charm-libs` that's missing from `lib/`, so otherwise your charm ends up shipping both.
 
 ## Change the imports
 
@@ -51,4 +51,4 @@ The class and function names are unchanged, so the import is the only edit in th
  )
 ```
 
-Check the charm's tests as well: any `unittest.mock.patch` that names `charms.tls_certificates_interface.v4.tls_certificates` has to name `charmlibs.interfaces.tls_certificates` instead.
+Check the charm's tests as well. A `unittest.mock.patch` of a class or method, such as `TLSCertificatesRequiresV4.get_assigned_certificate`, only needs the new path, `charmlibs.interfaces.tls_certificates`. A patch of a module-level function that the library calls itself, `calculate_relative_datetime` or `chain_has_valid_order`, won't be seen through that path, because the package re-exports those names from a private module.
