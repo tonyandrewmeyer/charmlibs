@@ -16,12 +16,16 @@ classifiers = [
 dynamic = ["version"]
 dependencies = []
 
+[project.optional-dependencies]
+testing = ["charmlibs-snap-testing==2.1.0"]
+
 [dependency-groups]
 lint = [  # installed for `just lint snap` (unit, functional, and integration are also installed)
     "typing_extensions",
 ]
 unit = [
     "pytest",
+    "charmlibs-snap[testing]",
 ]
 functional = [
     "pytest",
@@ -43,6 +47,9 @@ packages = ["src/charmlibs"]
 
 [tool.hatch.version]
 path = "src/charmlibs/snap/_version.py"
+
+[tool.uv.sources]
+charmlibs-snap-testing = { path = "testing", editable = true }
 
 [tool.ruff]
 extend = "../pyproject.toml"
