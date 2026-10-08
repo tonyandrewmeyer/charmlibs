@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING, Any
 import pytest
 
 from charmlibs.snap import _snapd_apps
-from charmlibs.snap._errors import AppNotFoundError, _NotFoundError
+from charmlibs.snap._errors import AppNotFoundError, NotInstalledError, _NotFoundError
+from charmlibs.snap_testing import Snap, Snapd
 from conftest import result_of
 
 if TYPE_CHECKING:
@@ -128,33 +129,24 @@ class TestEmptyServices:
         mock_client.get.assert_called_once_with('/v2/snaps/hello-world')
 
     @pytest.mark.parametrize('func', _FUNCTIONS, ids=lambda f: f.__name__)
-    def test_empty_services_not_installed_raises_not_found(
-        self, mock_client: MockClient, func: Any
-    ):
-        mock_client.get.side_effect = _NotFoundError(
-            'snap not installed', kind='snap-not-found', value='hello-world'
-        )
-        with pytest.raises(_NotFoundError) as ctx:
-            func('hello-world', [])
-        # snapd's own probe error is raised unchanged: terse message, snap name in value (which
-        # str() surfaces). Not chained -- the probe's error was handled, not propagated.
-        assert ctx.value.message == 'snap not installed'
+    def test_empty_services_not_installed_raises_not_found(self, func: Any):
+        # Driven through Snapd: an empty double naturally answers 'snap-not-found' for the
+        # not-installed probe, narrowed the same way as everywhere else in the library.
+        with Snapd():
+            with pytest.raises(NotInstalledError) as ctx:
+                func('hello-world', [])
+        assert ctx.value._kind == 'snap-not-found'
         assert ctx.value._value == 'hello-world'
-        assert str(ctx.value) == 'snap not installed (hello-world)'
         assert ctx.value.__context__ is None
-        mock_client.post.assert_not_called()
 
     @pytest.mark.parametrize('func', _FUNCTIONS, ids=lambda f: f.__name__)
     @pytest.mark.parametrize('snap', ['system', 'core'])
-    def test_system_names_are_probed(self, mock_client: MockClient, func: Any, snap: str):
+    def test_system_names_are_probed(self, func: Any, snap: str):
         # Unlike the conf and interfaces endpoints, /v2/apps has no 'system' alias and treats
         # 'core' as an ordinary snap, so neither name skips the probe.
-        mock_client.get.side_effect = _NotFoundError(
-            'snap not installed', kind='snap-not-found', value=snap
-        )
-        with pytest.raises(_NotFoundError):
-            func(snap, [])
-        mock_client.get.assert_called_once_with(f'/v2/snaps/{snap}')
+        with Snapd():
+            with pytest.raises(NotInstalledError):
+                func(snap, [])
 
     @pytest.mark.parametrize('func', _FUNCTIONS, ids=lambda f: f.__name__)
     def test_empty_services_still_validates_service_names(
@@ -181,60 +173,38 @@ class TestAppNotFoundConversion:
     # installed snap doesn't have, so start/stop/restart probe /v2/snaps/{snap} to tell them
     # apart. An absent snap raises _NotFoundError as it does elsewhere in the library, leaving
     # AppNotFoundError to mean the snap is installed but has no such service.
-    # Built fresh per call: raising an exception mutates its __context__, so a shared instance
-    # would leak chaining state between tests.
-    @staticmethod
-    def _app_not_found() -> AppNotFoundError:
-        return AppNotFoundError(
-            'snap "hello-world" has no service "daemon"', kind='app-not-found', value=''
-        )
-
-    @staticmethod
-    def _snap_not_found() -> _NotFoundError:
-        return _NotFoundError('snap not installed', kind='snap-not-found', value='hello-world')
 
     @pytest.mark.parametrize('func', _FUNCTIONS, ids=lambda f: f.__name__)
-    def test_absent_snap_raises_not_found(self, mock_client: MockClient, func: Any):
-        mock_client.post.side_effect = self._app_not_found()
-        mock_client.get.side_effect = self._snap_not_found()
-        with pytest.raises(_NotFoundError) as ctx:
-            func('hello-world', 'daemon')
+    def test_absent_snap_raises_not_found(self, func: Any):
+        with Snapd():
+            with pytest.raises(NotInstalledError) as ctx:
+                func('hello-world', 'daemon')
         assert ctx.value._kind == 'snap-not-found'
-        assert str(ctx.value) == 'snap not installed (hello-world)'
-        mock_client.get.assert_called_once_with('/v2/snaps/hello-world')
+        assert ctx.value._value == 'hello-world'
 
     @pytest.mark.parametrize('func', _FUNCTIONS, ids=lambda f: f.__name__)
-    def test_absent_snap_does_not_chain_app_not_found(self, mock_client: MockClient, func: Any):
+    def test_absent_snap_does_not_chain_app_not_found(self, func: Any):
         # snapd's misleading app-not-found is suppressed ('raise ... from None'), so the user
         # sees a single traceback that doesn't mention a service they may not have named.
-        mock_client.post.side_effect = self._app_not_found()
-        mock_client.get.side_effect = self._snap_not_found()
-        with pytest.raises(_NotFoundError) as ctx:
-            func('hello-world', 'daemon')
+        with Snapd():
+            with pytest.raises(_NotFoundError) as ctx:
+                func('hello-world', 'daemon')
         assert ctx.value.__cause__ is None
         assert ctx.value.__suppress_context__
 
     @pytest.mark.parametrize('func', _FUNCTIONS, ids=lambda f: f.__name__)
-    def test_missing_service_on_installed_snap_reraises_app_not_found(
-        self, mock_client: MockClient, func: Any
-    ):
-        mock_client.post.side_effect = self._app_not_found()
-        mock_client.get.return_value = result_of('snap_info_hello_world.json')
-        with pytest.raises(AppNotFoundError) as ctx:
-            func('hello-world', 'daemon')
+    def test_missing_service_on_installed_snap_reraises_app_not_found(self, func: Any):
+        with Snapd([Snap('hello-world', services={'other-service': 'inactive'})]):
+            with pytest.raises(AppNotFoundError) as ctx:
+                func('hello-world', 'daemon')
         assert ctx.value._kind == 'app-not-found'
-        mock_client.get.assert_called_once_with('/v2/snaps/hello-world')
 
     @pytest.mark.parametrize('func', _FUNCTIONS, ids=lambda f: f.__name__)
-    def test_snap_with_no_services_reraises_app_not_found(
-        self, mock_client: MockClient, func: Any
-    ):
-        # services=None on an installed snap with no services: the probe finds the snap, so
-        # snapd's own error stands.
-        mock_client.post.side_effect = self._app_not_found()
-        mock_client.get.return_value = result_of('snap_info_hello_world.json')
-        with pytest.raises(AppNotFoundError):
-            func('hello-world')
+    def test_snap_with_no_services_reraises_app_not_found(self, func: Any):
+        # A whole-snap action on a snap with no services raises, as in real snapd.
+        with Snapd([Snap('hello-world')]):
+            with pytest.raises(AppNotFoundError):
+                func('hello-world')
 
     @pytest.mark.parametrize('func', _FUNCTIONS, ids=lambda f: f.__name__)
     def test_successful_call_is_not_probed(self, mock_client: MockClient, func: Any):
