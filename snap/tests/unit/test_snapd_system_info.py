@@ -11,6 +11,7 @@ import pytest
 
 from charmlibs.snap import _snapd_system_info as _snapd
 from charmlibs.snap._errors import BadResponseError
+from charmlibs.snap_testing import Snapd
 
 if TYPE_CHECKING:
     from conftest import MockClient
@@ -25,15 +26,15 @@ class TestSystemInfo:
         assert info.architecture == 'amd64'
         mock_client.get.assert_called_once_with('/v2/system-info')
 
-    def test_architecture_returned_verbatim(self, mock_client: MockClient):
+    def test_architecture_returned_verbatim(self):
         # No validation against a fixed set of architectures: snapd defines the vocabulary,
         # so a value this library doesn't know is passed through unchanged.
-        mock_client.get.return_value = {'architecture': 'future-arch'}
-        assert _snapd.system_info().architecture == 'future-arch'
+        with Snapd(architecture='future-arch'):
+            assert _snapd.system_info().architecture == 'future-arch'
 
-    def test_repr(self, mock_client: MockClient):
-        mock_client.get.return_value = {'architecture': 'amd64'}
-        assert repr(_snapd.system_info()) == "SystemInfo(architecture='amd64')"
+    def test_repr(self):
+        with Snapd(architecture='amd64'):
+            assert repr(_snapd.system_info()) == "SystemInfo(architecture='amd64')"
 
     def test_non_dict_result_raises_bad_response(self, mock_client: MockClient):
         result = ['amd64']

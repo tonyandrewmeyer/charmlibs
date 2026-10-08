@@ -9,7 +9,10 @@ from unittest.mock import MagicMock
 import pytest
 
 from charmlibs.snap import _functions, _snapd_conf
-from charmlibs.snap._errors import BadResponseError, OptionNotFoundError
+from charmlibs.snap._errors import BadResponseError
+from charmlibs.snap_testing import ConfigGet, ConfigSet, Snap, Snapd
+
+_VITALITY_HINT = 'resilience.vitality-hint'
 
 
 @dataclass
@@ -27,46 +30,40 @@ def mock_conf(monkeypatch: pytest.MonkeyPatch) -> MockConf:
 
 
 class TestEnsureVitalityHint:
-    def test_unset_adds_snap(self, mock_conf: MockConf):
-        # Captured from snapd when the option has never been set (or was unset).
-        mock_conf.get_one.side_effect = OptionNotFoundError(
-            'snap "core" has no "resilience" configuration option',
-            kind='option-not-found',
-            value={'SnapName': 'core', 'Key': 'resilience'},
-        )
-        result = _functions.ensure_vitality_hint('foo')
-        mock_conf.get_one.assert_called_once_with('system', 'resilience.vitality-hint')
-        mock_conf.set.assert_called_once_with('system', {'resilience.vitality-hint': 'foo'})
+    def test_unset_adds_snap(self):
+        with Snapd() as snapd:
+            result = _functions.ensure_vitality_hint('foo')
+        assert snapd.history == [
+            ConfigGet(snap='system', keys=(_VITALITY_HINT,)),
+            ConfigSet(snap='system', values={_VITALITY_HINT: 'foo'}),
+        ]
         assert result is True
 
-    def test_empty_string_adds_snap(self, mock_conf: MockConf):
+    def test_empty_string_adds_snap(self):
         # snapd stores '' when the option is set to an empty string.
-        mock_conf.get_one.return_value = ''
-        result = _functions.ensure_vitality_hint('foo')
-        mock_conf.set.assert_called_once_with('system', {'resilience.vitality-hint': 'foo'})
+        with Snapd([Snap('core', config={_VITALITY_HINT: ''})]) as snapd:
+            result = _functions.ensure_vitality_hint('foo')
+        assert snapd.installed['core'].config == {_VITALITY_HINT: 'foo'}
         assert result is True
 
-    def test_appends_after_existing_snaps(self, mock_conf: MockConf):
-        mock_conf.get_one.return_value = 'bar,baz'
-        result = _functions.ensure_vitality_hint('foo')
-        mock_conf.set.assert_called_once_with(
-            'system', {'resilience.vitality-hint': 'bar,baz,foo'}
-        )
+    def test_appends_after_existing_snaps(self):
+        with Snapd([Snap('core', config={_VITALITY_HINT: 'bar,baz'})]) as snapd:
+            result = _functions.ensure_vitality_hint('foo')
+        assert snapd.installed['core'].config == {_VITALITY_HINT: 'bar,baz,foo'}
         assert result is True
 
     @pytest.mark.parametrize('current', ['foo', 'foo,bar', 'bar,foo', 'bar,foo,baz'])
-    def test_already_listed_is_no_op(self, mock_conf: MockConf, current: str):
-        mock_conf.get_one.return_value = current
-        result = _functions.ensure_vitality_hint('foo')
-        mock_conf.set.assert_not_called()
+    def test_already_listed_is_no_op(self, current: str):
+        with Snapd([Snap('core', config={_VITALITY_HINT: current})]) as snapd:
+            result = _functions.ensure_vitality_hint('foo')
+        assert snapd.history == [ConfigGet(snap='system', keys=(_VITALITY_HINT,))]
+        assert snapd.installed['core'].config == {_VITALITY_HINT: current}
         assert result is False
 
-    def test_instance_name_is_distinct_from_snap_name(self, mock_conf: MockConf):
-        mock_conf.get_one.return_value = 'foo'
-        result = _functions.ensure_vitality_hint('foo_bar')
-        mock_conf.set.assert_called_once_with(
-            'system', {'resilience.vitality-hint': 'foo,foo_bar'}
-        )
+    def test_instance_name_is_distinct_from_snap_name(self):
+        with Snapd([Snap('core', config={_VITALITY_HINT: 'foo'})]) as snapd:
+            result = _functions.ensure_vitality_hint('foo_bar')
+        assert snapd.installed['core'].config == {_VITALITY_HINT: 'foo,foo_bar'}
         assert result is True
 
     @pytest.mark.parametrize('snap', ['', ' ', 'foo,bar', ' foo', 'foo '])
