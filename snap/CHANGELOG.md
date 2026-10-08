@@ -1,3 +1,7 @@
+# 2.3.0 - 26 November 2026
+
+Add `charmlibs-snap-testing`, a stateful fake snapd for unit-testing charms that use `charmlibs.snap`, installed with the new `testing` extra (`charmlibs-snap[testing]`). It replaces snapd behind the library's REST client, so the library's own validation, channel resolution and error mapping still run in tests, and a malformed call fails the way it would against a real snapd. It provides the `snapd` pytest fixture, the `Snapd` class for seeding state and asserting on it, and `mocked()` for test harnesses that mock each testing package around every dispatch. `mocked()` joins a `Snapd` that's already open, and otherwise keeps no state: every snap counts as installed and every operation succeeds. See the package's README for usage.
+
 # 2.2.0 - 18 November 2026
 
 Add `ensure_vitality_hint`, a helper to ensure the specified snap is listed in snapd's [resilience.vitality-hint](https://snapcraft.io/docs/reference/administration/system-options/#system-resilience-vitality-hint), which configures the Linux kernel's out-of-memory killer to reduce the likelihood of the snap's services being killed when memory pressure is high.

@@ -1,0 +1,3 @@
+# 2.3.0 - 26 November 2026
+
+Initial release. A stateful fake snapd for unit-testing charms that use `charmlibs.snap`, versioned in step with `charmlibs-snap` and installed with its `testing` extra (`charmlibs-snap[testing]`). It replaces snapd behind the library's REST client, so the library's own validation, channel resolution and error mapping still run in tests. It provides the `snapd` pytest fixture, the `Snapd` class for seeding state and asserting on it, and `mocked()` for test harnesses that mock each testing package around every dispatch. `mocked()` joins a `Snapd` that's already open, and otherwise keeps no state: every snap counts as installed and every operation succeeds. See the README for usage.

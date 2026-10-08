@@ -216,7 +216,9 @@ jobs:
           # The publish workflow feeds this section to `gh release create
           # --notes-file`. Parse it here too, so a heading the extractor
           # can't match fails the PR rather than the release.
-          VERSION=$(.scripts/ls.py packages --regex "^${PACKAGE}$" --exclude-examples --exclude-placeholders --output-only version --no-json)
+          # Select by path: --regex only matches top-level package directories, and a
+          # package's testing/ subpackage comes back with it.
+          VERSION=$(.scripts/ls.py packages --exclude-examples --exclude-placeholders --output=path --output=version | jq -r --arg path "$PACKAGE" '.[] | select(.path == $path) | .version')
           .scripts/extract_changelog.py "${PACKAGE}/CHANGELOG.md" "${VERSION}"
 
   changelogs-updated-if-releasing:  # GitHub status checks require a static job name
