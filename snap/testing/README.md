@@ -67,6 +67,14 @@ def test_install_starts_prometheus():
 fixture's lifetime), so the real library code above the socket still runs: validation, channel
 resolution and error mapping. Only the daemon itself is simulated.
 
+A `Snapd` is reentrant, so a fixture and the test that uses it can each open it. It can only be
+used for one test, though: entering it again after its outermost scope has exited raises an error.
+
+`snap_testing.mocked()` is for test harnesses that open each testing package's mocks around every
+dispatch. If a `Snapd` is already open, it joins it, so a test that opens a `Snapd` (or uses the
+fixture) around the whole test keeps one snapd across dispatches and can assert on it. Otherwise,
+it opens a fresh, empty `Snapd` for its own scope, so each dispatch starts with an empty snapd.
+
 What the double reproduces was checked against a real snapd, and `charmlibs-snap`'s own unit
 tests run against it, so a difference between the two is a bug in the double.
 

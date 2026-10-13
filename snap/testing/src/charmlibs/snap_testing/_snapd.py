@@ -16,6 +16,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from typing import TYPE_CHECKING
 
 from charmlibs.snap import _client
@@ -24,9 +25,12 @@ from . import _api, _consistency
 from . import _state as state
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Mapping, Sequence
+    from collections.abc import Iterable, Iterator, Mapping, Sequence
 
 _PATCHED_FUNCTIONS = ('get', 'get_logs', 'post', 'put')
+
+# The Snapd instances whose outermost scope is open, innermost last.
+_open: list[Snapd] = []
 
 
 class Snapd:
@@ -94,6 +98,7 @@ class Snapd:
             raise RuntimeError('a Snapd instance is single-use; construct a new one per test')
         self._used = True
         self._depth = 1
+        _open.append(self)
         for name in _PATCHED_FUNCTIONS:
             self._patched.append((_client, name, getattr(_client, name)))
             setattr(_client, name, getattr(self._api, name))
@@ -103,6 +108,25 @@ class Snapd:
         self._depth -= 1
         if self._depth:
             return
+        _open.remove(self)
         for target, name, original in reversed(self._patched):
             setattr(target, name, original)
         self._patched.clear()
+
+
+@contextlib.contextmanager
+def mocked() -> Iterator[Snapd]:
+    """Mock out snapd for the length of the ``with`` block.
+
+    If a :class:`Snapd` is already open, this joins it and does nothing else, so the code under
+    test talks to the test's ``Snapd``. Otherwise, it opens a fresh, empty ``Snapd`` with no
+    store described (so any snap installs) for the length of its own scope. Either way, the
+    ``Snapd`` in use is returned.
+
+    This is the reentrant, argument-free ``mocked()`` that every charmlibs testing package
+    provides, so a test harness can open it around each dispatch. A test that sets up a starting
+    state, a store or failures, or wants snapd's state to last across dispatches, opens a
+    ``Snapd`` around the whole test instead.
+    """
+    with _open[-1] if _open else Snapd() as snapd:
+        yield snapd

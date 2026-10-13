@@ -29,6 +29,7 @@ from charmlibs.snap_testing import (
     Snapd,
     SnapStateValidationError,
     StoreSnap,
+    mocked,
 )
 from charmlibs.snap_testing import _state as state
 
@@ -58,6 +59,46 @@ class TestContextManager:
         with pytest.raises(RuntimeError):
             with snapd:
                 pass
+
+
+class TestMocked:
+    def test_opens_an_empty_permissive_snapd(self):
+        original = _client.post
+        with mocked() as snapd:
+            assert _client.post is not original
+            assert snapd.installed == {}
+            snap.install('prometheus')
+            assert snapd.installed['prometheus'].revision == '1'
+        assert _client.post is original
+
+    def test_separate_scopes_start_empty(self):
+        with mocked():
+            snap.install('prometheus')
+        with mocked() as snapd:
+            assert snapd.installed == {}
+
+    def test_joins_an_open_snapd(self):
+        snapd = Snapd([Snap('prometheus', channel='2/stable')])
+        with snapd:
+            with mocked() as joined:
+                assert joined is snapd
+                snap.refresh('prometheus', '2/edge')
+            with mocked():
+                snap.install('grafana')
+            assert _client.post == snapd._api.post
+        assert set(snapd.installed) == {'prometheus', 'grafana'}
+        assert snapd.installed['prometheus'].channel == '2/edge'
+
+    def test_nested_mocked_joins_the_outer_one(self):
+        with mocked() as outer:
+            with mocked() as inner:
+                assert inner is outer
+                snap.install('prometheus')
+            assert 'prometheus' in outer.installed
+
+    def test_joins_the_innermost_open_snapd(self):
+        with Snapd(), Snapd() as inner, mocked() as joined:
+            assert joined is inner
 
 
 class TestInstallPermissive:

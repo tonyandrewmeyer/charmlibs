@@ -19,12 +19,15 @@ Use :class:`Snapd` as a context manager around charm execution (``ops.testing.Co
 a real snapd: install/refresh/remove, service start/stop/restart, config, interfaces, aliases,
 and log retrieval all run against an in-memory model instead of a unix socket.
 
+:func:`mocked` opens an empty ``Snapd``, or joins one that is already open, for test harnesses
+that open each testing package's mocks around every dispatch.
+
 A ``snapd`` pytest fixture is available automatically through the ``pytest11`` entry point for the
 zero-config case.
 """
 
 from ._consistency import SnapStateValidationError
-from ._snapd import Snapd
+from ._snapd import Snapd, mocked
 from ._state import (
     Alias,
     ConfigGet,
@@ -76,4 +79,5 @@ __all__ = [
     'StoreSnap',
     'Unalias',
     'Unhold',
+    'mocked',
 ]
