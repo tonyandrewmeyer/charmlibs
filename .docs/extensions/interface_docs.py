@@ -64,6 +64,9 @@ INDEX_TEMPLATE = """
 ```
 """.strip()
 REPO_MAIN_URL = 'https://github.com/canonical/charmlibs/blob/main'
+# A README can contain `<!-- schema-table: schemas/provider.json -->` to have the field table for
+# that schema generated at docs build time, so that the schema is the only source of truth.
+SCHEMA_TABLE_MARKER = re.compile(r'<!--\s*schema-table:\s*(\S+?)\s*-->')
 
 
 def _main(docs_dir: pathlib.Path) -> None:
@@ -83,7 +86,7 @@ def _main(docs_dir: pathlib.Path) -> None:
         index = INDEX_TEMPLATE.format(label=label, interface_name=interface_name)
         _write_if_needed(path=ref_dir / f'{interface_name}.md', content=index)
         for v in (interface_dir / 'interface').glob('v[0-9]*'):
-            readme_raw = (v / 'README.md').read_text()
+            readme_raw = _expand_schema_tables((v / 'README.md').read_text(), v)
             base_url = f'{REPO_MAIN_URL}/interfaces/{interface_name}/interface/{v.name}'
             # match all non-http(s) markdown links and prepend base_url to matching links
             readme = re.sub(
@@ -93,6 +96,46 @@ def _main(docs_dir: pathlib.Path) -> None:
             )
             content = f'({label}-{v.name})=\n' + readme
             _write_if_needed(path=interface_ref_dir / f'{v.name}.md', content=content)
+
+
+def _expand_schema_tables(readme: str, version_dir: pathlib.Path) -> str:
+    """Replace each schema-table marker in the README with a table generated from the schema."""
+
+    def replace(match: re.Match[str]) -> str:
+        schema = json.loads((version_dir / match.group(1)).read_text())
+        return _schema_table(schema)
+
+    return SCHEMA_TABLE_MARKER.sub(replace, readme)
+
+
+def _schema_table(schema: dict[str, typing.Any]) -> str:
+    """Render the fields of a JSON schema as a Markdown table.
+
+    Nested object properties and array items are flattened using dotted paths, with `[]` marking
+    array items.
+    """
+    rows = ['| Field | Type | Required | Description |', '| --- | --- | --- | --- |']
+    rows.extend(_schema_rows(schema, prefix=''))
+    return '\n'.join(rows)
+
+
+def _schema_rows(schema: dict[str, typing.Any], prefix: str) -> list[str]:
+    rows: list[str] = []
+    required = set(schema.get('required', []))
+    for name, prop in schema.get('properties', {}).items():
+        path = f'{prefix}{name}'
+        type_ = prop.get('type', '')
+        if isinstance(type_, list):
+            type_ = ' | '.join(type_)
+        description = prop.get('description') or prop.get('title') or ''
+        description = ' '.join(description.split()).replace('|', '\\|')
+        is_required = 'yes' if name in required else 'no'
+        rows.append(f'| `{path}` | {type_} | {is_required} | {description} |')
+        if prop.get('type') == 'array' and isinstance(prop.get('items'), dict):
+            rows.extend(_schema_rows(prop['items'], prefix=f'{path}[].'))
+        else:
+            rows.extend(_schema_rows(prop, prefix=f'{path}.'))
+    return rows
 
 
 def _write_if_needed(path: pathlib.Path, content: str) -> None:
