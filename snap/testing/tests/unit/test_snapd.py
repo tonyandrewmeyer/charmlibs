@@ -33,6 +33,33 @@ from charmlibs.snap_testing import (
 from charmlibs.snap_testing import _state as state
 
 
+class TestContextManager:
+    def test_nested_scopes_share_state(self):
+        snapd = Snapd()
+        with snapd:
+            with snapd:
+                snap.install('prometheus')
+            snap.install('grafana')
+        assert set(snapd.installed) == {'prometheus', 'grafana'}
+
+    def test_inner_exit_keeps_the_double_in_place(self):
+        original = _client.post
+        snapd = Snapd()
+        with snapd:
+            with snapd:
+                pass
+            assert _client.post is not original
+        assert _client.post is original
+
+    def test_reentering_after_the_outermost_exit_raises(self):
+        snapd = Snapd()
+        with snapd:
+            pass
+        with pytest.raises(RuntimeError):
+            with snapd:
+                pass
+
+
 class TestInstallPermissive:
     def test_synthesised_fields(self):
         with Snapd() as snapd:

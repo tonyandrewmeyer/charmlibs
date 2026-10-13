@@ -33,8 +33,10 @@ class Snapd:
     """A simulated snapd, for use as a context manager around charm execution.
 
     Entering patches ``charmlibs.snap._client.get``, ``.get_logs``, ``.post`` and ``.put``;
-    exiting restores them. A ``Snapd`` instance is single-use, like ``ops.testing.Context``: it
-    cannot be re-entered once used, so a test can't accidentally accumulate state across runs.
+    exiting the outermost scope restores them. A ``Snapd`` is reentrant, so a fixture and the
+    test that uses it can each open it. It is single-use, though: entering it again after its
+    outermost scope has exited raises ``RuntimeError``, so a test can't accidentally carry
+    state from one run into the next.
     """
 
     def __init__(
@@ -59,6 +61,7 @@ class Snapd:
             installed, store=store_tuple, connections=connections, failures=failures
         )
         self._used = False
+        self._depth = 0
         self._patched: list[tuple[object, str, object]] = []
 
     @property
@@ -84,15 +87,22 @@ class Snapd:
         return list(self._api.history)
 
     def __enter__(self) -> Snapd:
+        if self._depth:
+            self._depth += 1
+            return self
         if self._used:
             raise RuntimeError('a Snapd instance is single-use; construct a new one per test')
         self._used = True
+        self._depth = 1
         for name in _PATCHED_FUNCTIONS:
             self._patched.append((_client, name, getattr(_client, name)))
             setattr(_client, name, getattr(self._api, name))
         return self
 
     def __exit__(self, *exc_info: object) -> None:
+        self._depth -= 1
+        if self._depth:
+            return
         for target, name, original in reversed(self._patched):
             setattr(target, name, original)
         self._patched.clear()

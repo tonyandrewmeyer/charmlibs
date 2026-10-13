@@ -14,3 +14,10 @@ if TYPE_CHECKING:
 def test_snapd_fixture_is_entered(snapd: Snapd):
     snap.install('prometheus')
     assert snapd.installed['prometheus'].name == 'prometheus'
+
+
+def test_snapd_fixture_can_be_entered_again_by_the_test(snapd: Snapd):
+    with snapd:
+        snap.install('prometheus')
+    snap.install('grafana')
+    assert set(snapd.installed) == {'prometheus', 'grafana'}
