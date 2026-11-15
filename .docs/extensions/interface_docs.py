@@ -95,8 +95,8 @@ def _main(docs_dir: pathlib.Path) -> None:
         for v in (interface_dir / 'interface').glob('v[0-9]*'):
             readme_raw = (v / 'README.md').read_text()
             schema = schemas.get(str((v / 'schema.py').relative_to(root)))
-            if schema is not None:
-                readme_raw = add_generated_sections(readme_raw, schema)
+            readme_path = (v / 'README.md').relative_to(root)
+            readme_raw = with_generated_sections(readme_path, readme_raw, schema)
             base_url = f'{REPO_MAIN_URL}/interfaces/{interface_name}/interface/{v.name}'
             # match all non-http(s) markdown links and prepend base_url to matching links
             readme = re.sub(
@@ -134,12 +134,22 @@ _SCHEMA_SCRIPT = pathlib.Path(__file__).parent.parent / 'scripts' / 'interface_s
 JsonSchema = dict[str, typing.Any]
 
 
-def _load_schemas(root: pathlib.Path, schema_paths: list[str]) -> dict[str, dict[str, typing.Any]]:
+class SchemaError(Exception):
+    """A schema.py couldn't be loaded; the message is the reason."""
+
+
+Databags = dict[str, JsonSchema | None]
+
+
+def _load_schemas(
+    root: pathlib.Path, schema_paths: list[str]
+) -> dict[str, Databags | SchemaError]:
     """Return the databag JSON Schemas for each schema.py, keyed by path relative to root.
 
     The schemas are imported in a separate environment with the dependencies from
     schema-requirements.txt, so that pydantic isn't needed in the docs environment.
-    Schemas that can't be loaded are left out, with a warning.
+    A schema that can't be loaded maps to a SchemaError with the reason. If the schemas
+    can't be loaded at all, the result is empty, with a warning.
     """
     if not schema_paths:
         return {}
@@ -153,22 +163,44 @@ def _load_schemas(root: pathlib.Path, schema_paths: list[str]) -> dict[str, dict
         *schema_paths,
     ]
     try:
-        output = subprocess.check_output(cmd, text=True, cwd=root)
-    except (OSError, subprocess.CalledProcessError) as e:
+        process = subprocess.run(cmd, capture_output=True, text=True, cwd=root, check=False)
+        if process.returncode != 0:
+            reason = process.stderr.strip() or f'exit code {process.returncode}'
+            raise SchemaError(f'{_SCHEMA_SCRIPT.name} failed:\n{reason}')
+        output = json.loads(process.stdout)
+    except (OSError, ValueError, SchemaError) as e:
         logger.warning(
-            'Could not load interface schemas, so relation data is not generated: %s', e
+            'Could not load the interface schemas, so no relation data is generated: %s', e
         )
         return {}
-    result: dict[str, dict[str, typing.Any]] = {}
-    for path, schema in json.loads(output).items():
-        if 'error' in schema:
-            logger.warning('Could not load interface schema %s:\n%s', path, schema['error'])
-            continue
-        result[path] = schema['databags']
-    return result
+    return {
+        path: SchemaError(schema['error']) if 'error' in schema else schema['databags']
+        for path, schema in output.items()
+    }
 
 
-def add_generated_sections(readme: str, databags: dict[str, JsonSchema | None]) -> str:
+def with_generated_sections(
+    readme_path: pathlib.Path, readme: str, databags: Databags | SchemaError | None
+) -> str:
+    """Return the README with the generated sections added, if there is a schema.
+
+    If the schema couldn't be loaded or rendered, warn, naming the README and the reason,
+    and return the README unchanged.
+    """
+    if databags is None:
+        return readme
+    if isinstance(databags, SchemaError):
+        reason = f'could not load schema.py:\n{databags}'
+    else:
+        try:
+            return add_generated_sections(readme, databags)
+        except Exception as e:  # Any malformed schema.
+            reason = f'could not render schema.py: {type(e).__name__}: {e}'
+    logger.warning('%s: relation data not generated, because it %s', readme_path, reason)
+    return readme
+
+
+def add_generated_sections(readme: str, databags: Databags) -> str:
     """Add the relation data tables and the direction diagram generated from the schema.
 
     The tables go directly under the 'Relation data' heading, or in a new section at the end
