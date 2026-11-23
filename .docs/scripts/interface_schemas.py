@@ -40,6 +40,7 @@ the interface preprocessor.
 
 from __future__ import annotations
 
+import dataclasses
 import importlib.util
 import json
 import pathlib
@@ -65,12 +66,21 @@ def _describe(path: pathlib.Path) -> dict[str, typing.Any]:
         models = _databag_models(module)
         return {
             'databags': {
-                name: None if model is None else model.model_json_schema()
+                name: None if model is None else _json_schema(model)
                 for name, model in models.items()
             }
         }
     except Exception:
         return {'error': traceback.format_exc()}
+
+
+def _json_schema(model: typing.Any) -> dict[str, typing.Any]:
+    """Return the JSON Schema of a Pydantic model or a (stdlib or Pydantic) dataclass."""
+    if hasattr(model, 'model_json_schema'):
+        return model.model_json_schema()
+    import pydantic  # Only available in the schema environment.
+
+    return pydantic.TypeAdapter(model).json_schema()
 
 
 def _load(path: pathlib.Path) -> types.ModuleType:
@@ -122,7 +132,7 @@ def _field_model(schema: typing.Any, field: str) -> typing.Any:
     args = [a for a in typing.get_args(annotation) if a is not type(None)]
     if args:
         annotation = args[0] if len(args) == 1 else annotation
-    if not hasattr(annotation, 'model_json_schema'):
+    if not hasattr(annotation, 'model_json_schema') and not dataclasses.is_dataclass(annotation):
         return None
     if annotation.__name__ == 'BaseModel':
         return None  # Not overridden by the subclass, so the databag is unspecified.

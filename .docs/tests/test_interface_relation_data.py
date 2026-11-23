@@ -265,6 +265,22 @@ def test_add_generated_sections_without_headings():
     assert lines.index('```mermaid') < lines.index('### Provider application databag')
 
 
+def _run_schema_script(*paths: pathlib.Path) -> dict[str, typing.Any]:
+    output = subprocess.check_output(
+        [
+            'uv',
+            'run',
+            '--no-project',
+            '--with-requirements',
+            str(_ROOT / 'schema-requirements.txt'),
+            str(_ROOT / '.docs' / 'scripts' / 'interface_schemas.py'),
+            *(str(p) for p in paths),
+        ],
+        text=True,
+    )
+    return json.loads(output)
+
+
 def test_schema_script_handles_both_conventions(tmp_path: pathlib.Path):
     """Run the schema script for real, as the docs build does.
 
@@ -311,22 +327,7 @@ def test_schema_script_handles_both_conventions(tmp_path: pathlib.Path):
     )
     broken = tmp_path / 'broken.py'
     broken.write_text('raise RuntimeError("nope")\n')
-    output = subprocess.check_output(
-        [
-            'uv',
-            'run',
-            '--no-project',
-            '--with-requirements',
-            str(_ROOT / 'schema-requirements.txt'),
-            str(_ROOT / '.docs' / 'scripts' / 'interface_schemas.py'),
-            str(new_style),
-            str(old_style),
-            str(misnamed),
-            str(broken),
-        ],
-        text=True,
-    )
-    result = json.loads(output)
+    result = _run_schema_script(new_style, old_style, misnamed, broken)
     new_bags = result[str(new_style)]['databags']
     assert list(new_bags['provider-app']['properties']) == ['host']
     assert new_bags['requirer-unit'] is None
@@ -336,6 +337,76 @@ def test_schema_script_handles_both_conventions(tmp_path: pathlib.Path):
     assert list(old_bags['requirer-unit']['properties']) == ['address']
     assert 'does not define ProviderAppData' in result[str(misnamed)]['error']
     assert 'RuntimeError: nope' in result[str(broken)]['error']
+
+
+def test_schema_script_handles_dataclass_databags(tmp_path: pathlib.Path):
+    """Dataclass databags render like Pydantic ones.
+
+    This needs `uv`, and network access unless uv already has schema-requirements.txt cached.
+    """
+    stdlib = tmp_path / 'stdlib.py'
+    stdlib.write_text(
+        textwrap.dedent("""\
+            import dataclasses
+
+            @dataclasses.dataclass
+            class Endpoint:
+                url: str
+
+            @dataclasses.dataclass
+            class ProviderAppData:
+                host: str
+                endpoints: list[Endpoint]
+                port: int = 25
+
+            ProviderUnitData = None
+            RequirerAppData = None
+            RequirerUnitData = None
+        """)
+    )
+    pydantic_dataclass = tmp_path / 'pydantic_dataclass.py'
+    pydantic_dataclass.write_text(
+        textwrap.dedent("""\
+            import pydantic
+
+            @pydantic.dataclasses.dataclass
+            class RequirerUnitData:
+                address: str
+
+            ProviderAppData = None
+            ProviderUnitData = None
+            RequirerAppData = None
+        """)
+    )
+    legacy = tmp_path / 'legacy.py'
+    legacy.write_text(
+        textwrap.dedent("""\
+            import dataclasses
+
+            from interface_tester.schema_base import DataBagSchema
+
+            @dataclasses.dataclass
+            class App:
+                name: str
+
+            class ProviderSchema(DataBagSchema):
+                app: App
+        """)
+    )
+    result = _run_schema_script(stdlib, pydantic_dataclass, legacy)
+    stdlib_bags = result[str(stdlib)]['databags']
+    provider_app = stdlib_bags['provider-app']
+    assert list(provider_app['properties']) == ['host', 'endpoints', 'port']
+    assert provider_app['required'] == ['host', 'endpoints']
+    assert 'Endpoint' in provider_app['$defs']
+    assert list(result[str(pydantic_dataclass)]['databags']['requirer-unit']['properties']) == [
+        'address'
+    ]
+    assert list(result[str(legacy)]['databags']['provider-app']['properties']) == ['name']
+    # And the result renders like a Pydantic model's.
+    rendered = ip._render_relation_data(stdlib_bags, link_schema=False, diagram='')
+    assert '### Provider application databag' in rendered
+    assert '#### `Endpoint`' in rendered
 
 
 def test_recursive_databag_model_lists_its_fields():
