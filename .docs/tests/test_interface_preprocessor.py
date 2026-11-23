@@ -259,3 +259,129 @@ def test_write_if_needed_rewrites_different(tmp_path: pathlib.Path):
     path.write_text('old')
     ip._write_if_needed(path=path, content='new')
     assert path.read_text() == 'new'
+
+
+# --- library line ---
+
+_LABELS = frozenset({'charmlibs-interfaces-smtp'})
+_NEW_SHAPE = '# smtp\n\nThe smtp interface sends mail.\n\n## Direction\n\nOne way.\n'
+
+
+@pytest.mark.parametrize(
+    ('lib', 'expected'),
+    [
+        (
+            'charmlibs.interfaces.smtp',
+            'Library: [`charmlibs.interfaces.smtp`](project:#charmlibs-interfaces-smtp)',
+        ),
+        (
+            # A package with no reference page in this repo's docs links to PyPI.
+            'charmlibs.interfaces.tls_certificates',
+            'Library: [`charmlibs.interfaces.tls_certificates`]'
+            '(https://pypi.org/project/charmlibs-interfaces-tls-certificates/)',
+        ),
+        ('cosl', 'Library: [`cosl`](https://pypi.org/project/cosl/)'),
+        # A distribution name and an import name both link to the PyPI project.
+        ('litmus-libs', 'Library: [`litmus-libs`](https://pypi.org/project/litmus-libs/)'),
+        (
+            'dpcharmlibs.interfaces',
+            'Library: [`dpcharmlibs.interfaces`](https://pypi.org/project/dpcharmlibs-interfaces/)',
+        ),
+        (
+            'charms.smtp_integrator.smtp',
+            'Library: `charms.smtp_integrator.smtp` (Charmhub-hosted)',
+        ),
+        # Anything else is shown as it is.
+        ('charms.smtp', 'Library: `charms.smtp`'),
+        ('see the smtp charm', 'Library: `see the smtp charm`'),
+    ],
+)
+def test_render_library_line(lib: str, expected: str):
+    line, _ = ip._render_library_line(lib, _LABELS)
+    assert line == expected
+
+
+def test_library_line_goes_at_the_end_of_the_intro():
+    result = ip._with_library_line(_NEW_SHAPE, 'charms.smtp_integrator.smtp', _LABELS)
+    assert result == (
+        '# smtp\n\nThe smtp interface sends mail.\n\n'
+        'Library: `charms.smtp_integrator.smtp` (Charmhub-hosted)\n\n'
+        '## Direction\n\nOne way.\n'
+    )
+
+
+def test_library_line_without_level_2_headings():
+    result = ip._with_library_line('# smtp\n\nSends mail.\n\n', 'cosl', _LABELS)
+    assert result == '# smtp\n\nSends mail.\n\nLibrary: [`cosl`](https://pypi.org/project/cosl/)\n'
+
+
+def test_library_line_ignores_headings_in_code_blocks():
+    readme = '# smtp\n\nIntro.\n\n```markdown\n## Usage\n```\n\n## Direction\n'
+    result = ip._with_library_line(readme, 'cosl', _LABELS)
+    assert result.index('Library: ') > result.index('## Usage')
+    assert result.index('Library: ') < result.index('## Direction')
+
+
+def test_no_library_line_without_lib():
+    assert ip._with_library_line(_NEW_SHAPE, None, _LABELS) == _NEW_SHAPE
+
+
+@pytest.mark.parametrize(
+    'readme',
+    [
+        # The old shape says which library to use in its Usage section, however it's spelled.
+        '# `smtp/v0`\n\n## Usage\n\nUse the [smtp library](https://example.com).\n',
+        # The new shape names the library in the intro.
+        '# smtp\n\nCharms should use [`charmlibs.interfaces.smtp`](https://example.com).\n',
+    ],
+)
+def test_no_library_line_when_the_readme_already_has_one(readme: str):
+    assert ip._with_library_line(readme, 'charmlibs.interfaces.smtp', _LABELS) == readme
+
+
+def test_no_library_line_when_the_readme_links_the_pypi_project():
+    readme = '# x\n\nUse [the library](https://pypi.org/project/dpcharmlibs-interfaces/).\n'
+    assert ip._with_library_line(readme, 'dpcharmlibs.interfaces', _LABELS) == readme
+
+
+@pytest.mark.parametrize(
+    ('yaml_text', 'expected'),
+    [
+        ('name: smtp\nlib: charms.smtp_integrator.smtp\n', 'charms.smtp_integrator.smtp'),
+        ("name: smtp\nlib: 'cosl'  # quoted, with a comment\n", 'cosl'),
+        ('name: smtp\n', None),
+        ('name: smtp\nlib:\n', None),
+        ('', None),
+    ],
+)
+def test_interface_lib(tmp_path: pathlib.Path, yaml_text: str, expected: str | None):
+    (tmp_path / 'interface.yaml').write_text(yaml_text)
+    assert ip._interface_lib(tmp_path) == expected
+
+
+def test_interface_lib_without_interface_yaml(tmp_path: pathlib.Path):
+    assert ip._interface_lib(tmp_path) is None
+
+
+def test_generate_adds_library_line_after_rewriting_links(tmp_path: pathlib.Path):
+    v0_dir = tmp_path / 'interfaces' / 'smtp' / 'interface' / 'v0'
+    v0_dir.mkdir(parents=True)
+    (v0_dir / 'README.md').write_text(_NEW_SHAPE + '\nSee [schema](schema.py).\n')
+    (v0_dir / 'interface.yaml').write_text('name: smtp\nlib: charmlibs.interfaces.smtp\n')
+    ref_dir = tmp_path / 'ref'
+    ref_dir.mkdir()
+
+    ip._generate_interface_docs(
+        interface_dir=v0_dir.parent.parent, ref_dir=ref_dir, package_labels=_LABELS
+    )
+
+    v0 = (ref_dir / 'smtp' / 'v0.md').read_text()
+    assert '[`charmlibs.interfaces.smtp`](project:#charmlibs-interfaces-smtp)' in v0
+    assert f'[schema]({ip._REPO_MAIN_URL}/interfaces/smtp/interface/v0/schema.py)' in v0
+
+
+def test_package_labels(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setattr(
+        ip.subprocess, 'check_output', _fake_ls(['pathops', 'interfaces/tls-certificates'])
+    )
+    assert ip._package_labels() == {'charmlibs-pathops', 'charmlibs-interfaces-tls-certificates'}

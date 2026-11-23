@@ -2,6 +2,7 @@
 
 # /// script
 # requires-python = ">=3.12"
+# dependencies = ["pyyaml~=6.0"]
 # ///
 
 # Copyright 2025 Canonical Ltd.
@@ -25,7 +26,8 @@ one writes an index stub with a glob toctree under ``reference/interfaces/``,
 plus one page per ``interface/v[0-9]*/README.md`` with relative links
 rewritten to absolute GitHub URLs. Where a version has a ``schema.py``, its
 page also gets relation data tables and a direction diagram generated from the
-schema. Any warning makes the script exit with an error once every page is written.
+schema, and where its ``interface.yaml`` names a ``lib``, a library line. Any
+warning makes the script exit with an error once every page is written.
 
 Run from ``just docs``; see ``docs.just`` for the invocation.
 
@@ -46,6 +48,8 @@ import re
 import subprocess
 import sys
 import typing
+
+import yaml
 
 _DOCS_DIR = pathlib.Path(__file__).parent.parent.resolve()
 _REPO_ROOT = _DOCS_DIR.parent
@@ -104,8 +108,14 @@ def _main() -> None:
         for p in (interface_dir / 'interface').glob('v[0-9]*/schema.py')
     )
     schemas = _load_schemas(root=_REPO_ROOT, schema_paths=schema_paths)
+    package_labels = _package_labels()
     for interface_dir in interface_dirs:
-        _generate_interface_docs(interface_dir=interface_dir, ref_dir=ref_dir, schemas=schemas)
+        _generate_interface_docs(
+            interface_dir=interface_dir,
+            ref_dir=ref_dir,
+            schemas=schemas,
+            package_labels=package_labels,
+        )
     if _logger.count:
         sys.exit(f'{_logger.count} warning(s) while generating the interface reference docs.')
 
@@ -124,6 +134,7 @@ def _generate_interface_docs(
     interface_dir: pathlib.Path,
     ref_dir: pathlib.Path,
     schemas: dict[str, _Databags | _SchemaError] | None = None,
+    package_labels: frozenset[str] = frozenset(),
 ) -> None:
     """Write the index stub and rewritten version READMEs for one interface."""
     interface_name = interface_dir.name
@@ -140,6 +151,8 @@ def _generate_interface_docs(
             readme_raw = _with_generated_sections(readme_path, readme_raw, schema)
         base_url = f'{_REPO_MAIN_URL}/interfaces/{interface_name}/interface/{v.name}'
         readme = _rewrite_links(readme_raw, base_url)
+        # After rewriting the links, which would otherwise rewrite the docs cross-reference.
+        readme = _with_library_line(readme, _interface_lib(v), package_labels)
         content = f'({label}-{v.name})=\n' + readme
         _write_if_needed(path=interface_ref_dir / f'{v.name}.md', content=content)
 
@@ -168,6 +181,96 @@ def _write_if_needed(path: pathlib.Path, content: str) -> None:
     """
     if not path.exists() or path.read_text() != content:
         path.write_text(content)
+
+
+#########################################
+# library line from interface.yaml's lib #
+#########################################
+
+# For example, charms.smtp_integrator.smtp: a library vendored with `charmcraft fetch-lib`.
+_CHARMHUB_LIB = re.compile(r'charms\.[A-Za-z_]\w*\.[A-Za-z_]\w*')
+# A Python distribution or import name, which PyPI normalises to the same project name.
+_PYPI_NAME = re.compile(r'[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?')
+
+
+def _package_labels() -> frozenset[str]:
+    """Return the Sphinx labels of this repo's package reference pages.
+
+    These are the labels that ``package_docs_preprocessor.py`` writes, such as
+    ``charmlibs-interfaces-tls-certificates``.
+    """
+    cmd = [
+        _REPO_ROOT / '.scripts' / 'ls.py',
+        'packages',
+        '--exclude-examples',
+        '--exclude-placeholders',
+        '--exclude-testing',
+    ]
+    packages: list[str] = json.loads(subprocess.check_output(cmd, text=True))
+    return frozenset(
+        '-'.join(['charmlibs', *(_normalise(part) for part in package.split('/'))])
+        for package in packages
+    )
+
+
+def _normalise(name: str) -> str:
+    """Normalise a name the way PyPI normalises distribution names."""
+    return re.sub(r'[-_.]+', '-', name).lower()
+
+
+def _interface_lib(version_dir: pathlib.Path) -> str | None:
+    """Return the ``lib`` from the version's interface.yaml, or None if there isn't one."""
+    path = version_dir / 'interface.yaml'
+    if not path.is_file():
+        return None
+    data = yaml.safe_load(path.read_text())
+    if not isinstance(data, dict):
+        return None
+    lib = typing.cast('dict[str, object]', data).get('lib')
+    if lib is None or not str(lib).strip():
+        return None
+    return str(lib).strip()
+
+
+def _with_library_line(readme: str, lib: str | None, package_labels: frozenset[str]) -> str:
+    """Return the README with a library line at the end of its intro, if it needs one.
+
+    The line goes before the first '## ' heading, which is where the hand-written 'Usage'
+    section used to say which library to use. It is left out if there's no ``lib``, if the
+    README still has a 'Usage' section, or if the README already mentions the library.
+    """
+    if lib is None:
+        return readme
+    line, mentions = _render_library_line(lib, package_labels)
+    lines = readme.splitlines()
+    headings = _level_2_headings(lines)
+    if 'usage' in headings or any(m in readme for m in mentions):
+        return readme
+    heading = min(headings.values(), default=len(lines))
+    intro_end = heading
+    while intro_end > 0 and not lines[intro_end - 1].strip():
+        intro_end -= 1
+    after = ['', *lines[heading:]] if heading < len(lines) else []
+    return '\n'.join([*lines[:intro_end], '', line, *after]) + '\n'
+
+
+def _render_library_line(lib: str, package_labels: frozenset[str]) -> tuple[str, list[str]]:
+    """Return the library line, and the strings that mean a README already mentions it.
+
+    * A package in this repo links to its reference page, or to PyPI if it doesn't have one.
+    * Any other Python package links to its PyPI project.
+    * A Charmhub-hosted library is plain text, since its Charmhub page may go away.
+    * Anything else is plain text.
+    """
+    code = f'`{lib}`'
+    if _CHARMHUB_LIB.fullmatch(lib):
+        return f'Library: {code} (Charmhub-hosted)', [lib]
+    if not _PYPI_NAME.fullmatch(lib) or lib.startswith('charms.'):
+        return f'Library: {code}', [lib]
+    project = _normalise(lib)
+    if lib.startswith('charmlibs.') and project in package_labels:
+        return f'Library: [{code}](project:#{project})', [lib]
+    return f'Library: [{code}](https://pypi.org/project/{project}/)', [lib, project]
 
 
 ##########################################
