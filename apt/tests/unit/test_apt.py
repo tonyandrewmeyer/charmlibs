@@ -3,6 +3,7 @@
 
 # ruff: noqa: E501
 
+import pathlib
 import subprocess
 from unittest.mock import MagicMock, patch
 
@@ -589,3 +590,100 @@ class TestAptBareMethods:
         packages = apt.remove_package('ubuntu-advantage-tools')
         mock_subprocess.assert_not_called()
         assert packages == []
+
+
+class TestAddRepository:
+    @pytest.fixture
+    def sources_file(self, tmp_path: pathlib.Path):
+        path = tmp_path / 'example.list'
+        with patch.object(apt.DebianRepository, '_make_filename', return_value=str(path)):
+            yield path
+
+    @staticmethod
+    def _repo(options: dict[str, str] | None = None) -> apt.DebianRepository:
+        return apt.DebianRepository(
+            enabled=True,
+            repotype='deb',
+            uri='https://example.com/ubuntu',
+            release='noble',
+            groups=['main'],
+            options=options,
+        )
+
+    @patch('charmlibs.apt.subprocess.run')
+    def test_add_without_options_uses_add_apt_repository(
+        self, mock_run: MagicMock, sources_file: pathlib.Path
+    ):
+        apt._add_repository(self._repo())
+        mock_run.assert_called_once()
+        cmd = mock_run.call_args.args[0]
+        assert cmd[0] == 'add-apt-repository'
+        assert '--sourceslist=deb https://example.com/ubuntu noble main' in cmd
+        assert not sources_file.exists()
+
+    @patch('charmlibs.apt.subprocess.run')
+    def test_add_with_options_writes_line(self, mock_run: MagicMock, sources_file: pathlib.Path):
+        repo = self._repo({'arch': 'amd64'})
+        apt._add_repository(repo)
+        mock_run.assert_not_called()
+        expected = 'deb [arch=amd64] https://example.com/ubuntu noble main\n'
+        assert sources_file.read_text() == expected
+        # Adding again doesn't duplicate the line.
+        apt._add_repository(repo)
+        assert sources_file.read_text() == expected
+
+    @patch('charmlibs.apt.subprocess.run')
+    def test_add_with_options_keeps_other_lines(
+        self, mock_run: MagicMock, sources_file: pathlib.Path
+    ):
+        sources_file.write_text('deb https://example.com/other noble main\n')
+        repo = self._repo({'arch': 'amd64'})
+        apt._add_repository(repo)
+        assert sources_file.read_text() == (
+            'deb https://example.com/other noble main\n'
+            'deb [arch=amd64] https://example.com/ubuntu noble main\n'
+        )
+        apt._add_repository(repo, remove=True)
+        assert sources_file.read_text() == 'deb https://example.com/other noble main\n'
+        mock_run.assert_not_called()
+
+    @patch('charmlibs.apt.subprocess.run')
+    def test_remove_last_line_removes_file(self, mock_run: MagicMock, sources_file: pathlib.Path):
+        repo = self._repo({'arch': 'amd64'})
+        apt._add_repository(repo)
+        apt._add_repository(repo, remove=True)
+        assert not sources_file.exists()
+        mock_run.assert_not_called()
+
+    @patch('charmlibs.apt.update')
+    @patch('charmlibs.apt.subprocess.run')
+    def test_add_with_options_updates_cache(
+        self, mock_run: MagicMock, mock_update: MagicMock, sources_file: pathlib.Path
+    ):
+        apt._add_repository(self._repo({'arch': 'amd64'}), update_cache=True)
+        mock_update.assert_called_once_with()
+        mock_run.assert_not_called()
+
+    @patch('charmlibs.apt.subprocess.run')
+    def test_from_repo_line_keeps_arch(self, mock_run: MagicMock, sources_file: pathlib.Path):
+        line = 'deb [arch=amd64,arm64 signed-by=/nonexistent.asc] https://example.com/ubuntu noble main'
+        repo = apt.DebianRepository.from_repo_line(line)
+        mock_run.assert_not_called()
+        # signed-by is still left out, as it was with add-apt-repository.
+        assert sources_file.read_text() == (
+            'deb [arch=amd64,arm64] https://example.com/ubuntu noble main\n'
+        )
+        assert repo.options == {'arch': 'amd64,arm64'}
+
+    def test_make_options_string_does_not_mutate_options(self):
+        repo = apt.DebianRepository(
+            enabled=True,
+            repotype='deb',
+            uri='https://example.com/ubuntu',
+            release='noble',
+            groups=['main'],
+            gpg_key_filename='/key.asc',
+            options={'arch': 'amd64'},
+        )
+        assert repo.make_options_string() == '[arch=amd64 signed-by=/key.asc] '
+        assert repo.options == {'arch': 'amd64'}

@@ -1053,7 +1053,7 @@ class DebianRepository:
         Combining ``gpg_key``, if set (and ``include_signed_by`` is ``True``), with any other
         provided options to form the options section of a one-line-style definition.
         """
-        options = self._options if self._options else {}
+        options = dict(self._options) if self._options else {}
         if include_signed_by and self.gpg_key:
             options['signed-by'] = self.gpg_key
         if not options:
@@ -1078,7 +1078,10 @@ class DebianRepository:
             repo_line: a string representing a repository entry
             write_file: Boolean to enable writing the new repo to disk. True by default.
                 Expect it to result in an add-apt-repository call under the hood, like
-                ``add-apt-repository --no-update --sourceslist="$repo_line"``
+                ``add-apt-repository --no-update --sourceslist="$repo_line"``. If the line
+                has options other than ``signed-by`` (such as ``arch``), which
+                add-apt-repository would discard, the line is written directly to the file
+                add-apt-repository would use instead.
         """
         repo = RepositoryMapping._parse(
             repo_line,
@@ -1488,6 +1491,10 @@ class RepositoryMapping(Mapping[str, DebianRepository]):
     ) -> None:
         """Add a new repository to the system using add-apt-repository.
 
+        If the repository has options other than ``signed-by`` (such as ``arch``), which
+        add-apt-repository would discard, the repository's line is instead written directly
+        to the file that add-apt-repository would use.
+
         Args:
             repo: a :class:`DebianRepository` object
                 if :attr:`DebianRepository.enabled` is false, will return without adding the repo
@@ -1540,11 +1547,18 @@ def _add_repository(
     key_file = repo.gpg_key
     if key_file and not remove and not os.path.exists(key_file):
         msg = (
-            "Adding repository '%s' with add-apt-repository."
+            "Adding repository '%s'."
             " Key file '%s' does not exist."
             ' Ensure it is imported correctly to use this repository.'
         )
         logger.warning(msg, line, key_file)
+    if repo.options:
+        # add-apt-repository --sourceslist silently discards options such as ``arch``, so
+        # write the line ourselves to the file that add-apt-repository would have used.
+        _write_repository_line(repo._make_filename(), line, remove=remove)
+        if update_cache:
+            update()
+        return
     cmd = [
         'add-apt-repository',
         '--yes',
@@ -1567,6 +1581,35 @@ def _add_repository(
             e.stderr.decode(),
         )
         raise
+
+
+def _write_repository_line(filename: str, line: str, remove: bool = False) -> None:
+    """Add or remove a one-line-style repository definition in ``filename``.
+
+    Adding a line that is already present is a no-op. Removing the last line deletes the file.
+    """
+    try:
+        with open(filename) as f:
+            lines = f.read().splitlines()
+    except FileNotFoundError:
+        lines = []
+    with tracer.start_as_current_span('remove source' if remove else 'add source') as span:
+        span.set_attribute('filename', filename)
+        if remove:
+            if line not in lines:
+                return
+            lines = [existing for existing in lines if existing != line]
+            if not any(existing.strip() for existing in lines):
+                logger.info('Removing %s', filename)
+                os.remove(filename)
+                return
+        else:
+            if line in lines:
+                return
+            lines.append(line)
+        logger.info('Writing %r to %s', line, filename)
+        with open(filename, 'w') as f:
+            f.write('\n'.join(lines) + '\n')
 
 
 class _Deb822Stanza:
