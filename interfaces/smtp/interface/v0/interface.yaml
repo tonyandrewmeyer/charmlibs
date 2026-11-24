@@ -1,11 +1,11 @@
 name: smtp
 version: 0
 status: published
-lib: charms.smtp_integrator.smtp
-summary: Connect to a SMTP server.
+lib: charmlibs.interfaces.smtp
+summary: Connect to an SMTP server.
 description: |
-  The `smtp` interface allows charms to connect to a SMTP server.
-  The provider charm provides the SMTP details so that the requirer can connect.
+  The `smtp` interface allows charms to connect to an SMTP server.
+  The provider charm provides the SMTP details, including a password or a secret that contains one, so that the requirer can connect.
 
 providers:
   - name: smtp-integrator
@@ -14,4 +14,4 @@ providers:
 requirers:
   []
 
-maintainer: platform-engineering
+maintainer: platform-engineering-emea

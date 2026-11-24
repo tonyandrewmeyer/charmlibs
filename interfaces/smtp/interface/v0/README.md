@@ -1,61 +1,21 @@
-# `smtp/v0`
-
-## Overview
-
-This relation interface specification describes the expected behavior of charms integrating over the `smtp` Juju interface to provide or consume SMTP data.
-
-## Usage
-
-In most cases, this will be accomplished using the [smtp library](https://github.com/canonical/smtp-integrator-operator/blob/main/lib/charms/smtp_integrator/v0/smtp.py), although charm developers are free to provide alternative libraries as long as they fulfil the behavioural and schematic requirements described in this document.
-
-## Direction
-
-The `smtp` interface implements a provider/requirer pattern.
-The requirer is a charm that requires SMTP details to connect to an SMTP server, and the provider is a charm holding those details.
-
-```mermaid
-flowchart TD
-    Provider -- host, port, user, password_id, auth_type, transport_security, domain --> Requirer
-```
-
-or alternatively, if secrets are not supported by either sides
-
-```mermaid
-flowchart TD
-    Provider -- host, port, user, password, auth_type, transport_security, domain --> Requirer
-```
+# smtp
 
 ## Behavior
 
-The requirer and the provider must adhere to a certain set of criteria to be considered compatible with the interface.
+Keywords are as in RFC 2119.
 
 ### Provider
 
-- Is expected to provide the SMTP details so that the requirer can connect.
+- MUST write the SMTP details to the application databag from the leader unit.
+- MUST NOT set both `password` and `password_id`.
+- SHOULD use `password_id` rather than `password`, unless secrets are not supported.
+- If it sets `password_id`, MUST use a Juju secret that has the password under the `password` key.
+- If it owns that secret, MUST grant it to the relation, and SHOULD revoke the grant when the relation is removed.
+- MUST update the databag when the SMTP details change.
 
 ### Requirer
 
-- Is not expected to publish anything
-
-## Relation Data
-
-### Provider
-
-[\[Pydantic Schema\]](./schema.py)
-
-Provider publishes the SMTP configuration. It should be placed in the **application** databag.
-
-#### Example
-
-```yaml
-related-units: {}
-application_data: {
-  "host": "example.com",
-  "port": "587",
-  "user": "example_user",
-  "password_id": "01548499c9233d4612352c989162d940f6a9e6f6d5cc058dfcf66f51575e09c2",
-  "auth_type": "plain",
-  "transport_security": "tls",
-  "domain": "example.com",
-}
-```
+- MUST NOT write to either databag.
+- SHOULD treat the relation as not ready until the provider's application databag is populated.
+- If `password_id` is set, MUST read the password from the `password` key of that secret.
+- SHOULD use the latest revision of the secret when it changes.

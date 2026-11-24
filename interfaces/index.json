@@ -785,12 +785,12 @@
   {
     "name": "smtp",
     "version": "0",
-    "lib": "charms.smtp_integrator.smtp",
-    "lib_url": "https://charmhub.io/smtp-integrator/libraries/smtp",
-    "lib_docs_url": "",
+    "lib": "charmlibs.interfaces.smtp",
+    "lib_url": "https://pypi.org/project/charmlibs-interfaces-smtp",
+    "lib_docs_url": "https://canonical.com/juju/docs/charmlibs/reference/charmlibs/interfaces/smtp",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/smtp/",
-    "summary": "Connect to a SMTP server.",
-    "description": "The `smtp` interface allows charms to connect to a SMTP server.\nThe provider charm provides the SMTP details so that the requirer can connect.",
+    "summary": "Connect to an SMTP server.",
+    "description": "The `smtp` interface allows charms to connect to an SMTP server.\nThe provider charm provides the SMTP details, including a password or a secret that contains one, so that the requirer can connect.",
     "tags": [
       "operations"
     ],
