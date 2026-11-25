@@ -761,12 +761,12 @@
     "lib_url": "https://charmhub.io/sdcore-nms-k8s/libraries/sdcore_config",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/sdcore_config/",
-    "summary": "",
-    "description": "",
+    "summary": "Get the gRPC address of the SD-Core configuration service.",
+    "description": "Within SD-Core, the network functions need to connect to the configuration service (Webui) to get the configuration of the SD-Core network.\nThe address of the service is its hostname, which is the application name, and a fixed gRPC port.\nThe `sdcore_config` interface allows a network function to get that address.\nIn an SD-Core network, the provider of this interface would be the charm that runs the configuration service, such as the NMS (Network Management System), and the requirers would be the control plane network functions (AMF, AUSF, NRF, NSSF, PCF, SMF, UDM, and UDR).",
     "tags": [
       "telco"
     ],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "sdcore_management",
