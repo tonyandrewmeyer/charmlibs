@@ -1,21 +1,26 @@
 name: connect_client
 version: 0
-status: draft
+status: published
 lib: charms.data_platform_libs.data_interfaces
 summary: Interact with Kafka Connect clusters.
 description: |
-  The `connect_client` interface allows charms to interact with Kafka Connect clusters for connector plugin and task management.
-  The provider charm manages the Kafka Connect cluster and deploys connector plugins from URLs supplied by the requirer, while the requirer charm manages its connectors and tasks using the provider's REST endpoints.
+  The `connect_client` interface allows charms, usually called integrators, to interact with Kafka Connect clusters to manage connectors and tasks.
+  An integrator might need a connector plugin, which is a bundle of JAR files that implement the Kafka Connect connector interface, or not (for example, a MirrorMaker integrator doesn't).
+  The requirer charm gives the URL of its plugin, and the provider charm installs it on every Kafka Connect worker and shares credentials and REST endpoints, which the requirer uses to manage its connectors.
+  Requirer charms can also use the [`kafkacl`](https://github.com/canonical/kafkacl) library, which has reusable code for Kafka Connect integrators.
 
 providers:
-  - name: kafka-connect-operator
-    url: https://www.github.com/canonical/kafka-connect-operator
-  - name: kafka-connect-k8s-operator
-    url: https://www.github.com/canonical/kafka-connect-k8s-operator
+  - name: kafka-connect
+    url: https://github.com/canonical/kafka-operator/tree/main/connect_machine
+  - name: kafka-connect-k8s
+    url: https://github.com/canonical/kafka-operator/tree/main/connect_k8s
 
 requirers:
+  - name: kafka-ui
+    url: https://github.com/canonical/kafka-ui-operator
+  - name: kafka-ui-k8s
+    url: https://github.com/canonical/kafka-ui-k8s-operator
   - name: template-connect-integrator
-    url: https://www.github.com/canonical/template-connect-integrator
+    url: https://github.com/canonical/template-connect-integrator
 
-
-maintainer: data-platform-bigdata
+maintainer: data-bigdata

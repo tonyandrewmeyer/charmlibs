@@ -77,12 +77,12 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/connect_client/",
     "summary": "Interact with Kafka Connect clusters.",
-    "description": "The `connect_client` interface allows charms to interact with Kafka Connect clusters for connector plugin and task management.\nThe provider charm manages the Kafka Connect cluster and deploys connector plugins from URLs supplied by the requirer, while the requirer charm manages its connectors and tasks using the provider's REST endpoints.",
+    "description": "The `connect_client` interface allows charms, usually called integrators, to interact with Kafka Connect clusters to manage connectors and tasks.\nAn integrator might need a connector plugin, which is a bundle of JAR files that implement the Kafka Connect connector interface, or not (for example, a MirrorMaker integrator doesn't).\nThe requirer charm gives the URL of its plugin, and the provider charm installs it on every Kafka Connect worker and shares credentials and REST endpoints, which the requirer uses to manage its connectors.\nRequirer charms can also use the [`kafkacl`](https://github.com/canonical/kafkacl) library, which has reusable code for Kafka Connect integrators.",
     "tags": [
       "data",
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "cos_agent",
