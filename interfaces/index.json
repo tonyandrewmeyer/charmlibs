@@ -748,7 +748,7 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/saml/",
     "summary": "Authenticate users with SAML.",
-    "description": "The `saml` interface allows charms to connect to a SAML Identity Provider for authenticating users.\nThe provider charm is the SAML Identity Provider, and shares the necessary data with requirer charms (SAML Service Providers).",
+    "description": "The `saml` interface allows charms to connect to a SAML Identity Provider (IdP) for authenticating users.\nThe provider charm represents the IdP, and shares its entity ID, certificates, and single sign-on and single logout endpoints with requirer charms (SAML Service Providers).",
     "tags": [
       "identity-auth"
     ],

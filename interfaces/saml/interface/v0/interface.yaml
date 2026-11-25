@@ -5,14 +5,21 @@ status: published
 lib: charms.saml_integrator.saml
 summary: Authenticate users with SAML.
 description: |
-  The `saml` interface allows charms to connect to a SAML Identity Provider for authenticating users.
-  The provider charm is the SAML Identity Provider, and shares the necessary data with requirer charms (SAML Service Providers).
+  The `saml` interface allows charms to connect to a SAML Identity Provider (IdP) for authenticating users.
+  The provider charm represents the IdP, and shares its entity ID, certificates, and single sign-on and single logout endpoints with requirer charms (SAML Service Providers).
 
 providers:
   - name: saml-integrator
     url: https://github.com/canonical/saml-integrator-operator
 
 requirers:
-  []
+  - name: discourse-k8s
+    url: https://github.com/canonical/discourse-k8s-operator
+  - name: indico
+    url: https://github.com/canonical/indico-operator
+  - name: netbox-k8s
+    url: https://github.com/canonical/netbox-k8s-operator
+  - name: synapse
+    url: https://github.com/canonical/synapse-operator
 
 maintainer: platform-engineering
