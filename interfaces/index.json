@@ -277,7 +277,7 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/grafana_auth/",
     "summary": "Provide authentication configuration for Grafana.",
-    "description": "The `grafana_auth` interface supports configuring Grafana authentication.\nThe provider sends the authentication mode and its configuration.\nThe requirer configures authentication with Grafana and replies with its publicly reachable URL.",
+    "description": "The `grafana_auth` interface supports configuring Grafana authentication.\nThe provider sends the authentication mode and its configuration.\nThe requirer configures authentication with Grafana and replies with the URLs at which Grafana can be reached.",
     "tags": [
       "identity-auth",
       "observability"
