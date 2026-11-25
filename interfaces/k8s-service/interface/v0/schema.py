@@ -40,7 +40,7 @@ class ProviderAppData(BaseModel):
         default=None,
         description=(
             'The Kubernetes Service, as a YAML-encoded mapping with `service-name`, the name of'
-            ' the Service (for example, `<name>.<namespace>`), and `service-port`, its port as a'
+            ' the Service (for example, `kfp-api.kubeflow`), and `service-port`, its port as a'
             ' string. Only written by charms that use SDI.'
         ),
         title='Service data',
