@@ -8,7 +8,7 @@ Keywords are as in RFC 2119.
 
 - MUST write to the application databag from the leader unit.
 - MUST create a SASL/SCRAM user for each relation once the requirer has written `topic`, and MUST NOT write the credentials until the user exists.
-- MUST grant the user ACLs for the roles in `extra-user-roles`: `producer` gets `WRITE`, `DESCRIBE`, and `CREATE` on the topic; `consumer` gets `READ` and `DESCRIBE` on the topic, and `READ` on consumer groups with the prefix in `consumer-group-prefix`; `admin` makes the user a super-user; and `manager` gets every operation on every topic, group, and transactional ID.
+- MUST grant the user ACLs for the roles in `extra-user-roles`. The `producer` role gets `WRITE`, `DESCRIBE`, and `CREATE` on the topic. The `consumer` role gets `READ` and `DESCRIBE` on the topic, and `READ` on the consumer groups that start with `consumer-group-prefix`. The `admin` role makes the user a super-user. The `manager` role gets every operation on every topic, group, and transactional ID.
 - SHOULD grant the user the permissions in `entity-permissions`, as well as those from its roles.
 - If the requirer writes `entity-type`, SHOULD create a custom entity with `entity-name` and `entity-password`, and MUST delete it when the relation is removed.
 - MUST delete the user and its ACLs from the Kafka cluster when the relation is removed.
