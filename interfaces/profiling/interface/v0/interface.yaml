@@ -4,14 +4,23 @@ name: profiling
 version: 0
 
 # `status` describes where the interface is in its lifecycle. Valid values are described in LEGEND.md.
-status: draft
+status: published
+
+lib: charms.pyroscope_coordinator_k8s.profiling
+summary: Expose a profiling ingestion endpoint.
+description: |
+  The `profiling` interface lets an application that ingests profiling data, such as Pyroscope, expose its ingestion endpoint to applications that push profiles to it.
+  The provider is the server (the profile ingester) and the requirer is the source of the profiles.
+  The provider publishes its OTLP gRPC endpoint, and whether it uses TLS; the requirer publishes nothing.
 
 providers:
   - name: pyroscope-coordinator-k8s
     url: https://github.com/canonical/pyroscope-operators
+  - name: opentelemetry-collector-k8s
+    url: https://github.com/canonical/opentelemetry-collector-k8s-operator
 
 requirers:
   - name: opentelemetry-collector-k8s
     url: https://github.com/canonical/opentelemetry-collector-k8s-operator
 
-maintainer: "observability"
+maintainer: tracing-and-profiling

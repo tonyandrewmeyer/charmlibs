@@ -677,14 +677,14 @@
   {
     "name": "profiling",
     "version": "0",
-    "lib": "",
+    "lib": "charms.pyroscope_coordinator_k8s.profiling",
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/profiling/",
-    "summary": "",
-    "description": "",
+    "summary": "Expose a profiling ingestion endpoint.",
+    "description": "The `profiling` interface lets an application that ingests profiling data, such as Pyroscope, expose its ingestion endpoint to applications that push profiles to it.\nThe provider is the server (the profile ingester) and the requirer is the source of the profiles.\nThe provider publishes its OTLP gRPC endpoint, and whether it uses TLS; the requirer publishes nothing.",
     "tags": [],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "prometheus_remote_write",
