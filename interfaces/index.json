@@ -334,8 +334,8 @@
     "lib_url": "https://charmhub.io/traefik-k8s/libraries/ingress",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/ingress/",
-    "summary": "",
-    "description": "",
+    "summary": "Route external traffic to an application, load-balanced across its units.",
+    "description": "The `ingress` interface lets a charm request ingress for its application.\nThe requirer sends the port to expose and the address of each of its units, and the provider configures an ingress that load-balances across those units and returns the URL at which the application is reachable.",
     "tags": [
       "ingress",
       "networking"

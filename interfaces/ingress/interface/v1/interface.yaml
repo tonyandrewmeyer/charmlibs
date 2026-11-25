@@ -2,6 +2,12 @@ name: ingress
 version: 1
 status: retired
 lib: charms.traefik_k8s.ingress
+summary: Route external traffic to an application's leader unit (deprecated; use version 2).
+description: |
+  The `ingress` interface lets a charm request ingress for its application.
+  In version 1, the requirer's leader sends a single host and port, so all traffic is routed to the leader unit rather than load-balanced across the application's units.
+  The provider returns the URL at which the application is reachable.
+  Version 1 is deprecated in favour of version 2, which fixes this.
 
 providers:
   - name: traefik-k8s

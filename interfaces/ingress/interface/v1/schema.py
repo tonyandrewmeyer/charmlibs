@@ -2,57 +2,93 @@
 # See LICENSE file for licensing details.
 """This file defines the schemas for the provider and requirer sides of the ingress interface.
 
-It exposes two interfaces.schema_base.DataBagSchema subclasses called:
-- ProviderSchema
-- RequirerSchema
-
-Examples:
-    ProviderSchema:
-        unit: <empty>
-        app: {"ingress":
-                 {"url":  "http://foo.bar:80/model_name-app_name"}
-             }
-
-    RequirerSchema:
-        unit: <empty>
-        app: {"name": "app-name",
-              "host": "hostname",
-              "port": 4242,
-              "model": "model-name"
-              }
+Requirer values are plain strings; the provider's `ingress` value is a YAML mapping.
 """
 
 import yaml
-from interface_tester.schema_base import DataBagSchema
-from pydantic import AnyHttpUrl, BaseModel, validator
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, field_validator
 
 
 class Url(BaseModel):
-    url: AnyHttpUrl
+    url: AnyHttpUrl = Field(
+        description="The URL at which the requirer application is reachable through the ingress.",
+        examples=["http://foo.bar/model_name-app_name"],
+    )
 
 
-class MyProviderData(BaseModel):
-    ingress: Url
+class ProviderAppData(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "ingress": "url: http://foo.bar/model_name-app_name\n",
+                },
+            ]
+        }
+    )
 
-    @validator('ingress', pre=True)
-    def decode_ingress(cls, ingress):
-        return yaml.safe_load(ingress)
+    ingress: Url = Field(
+        description="A YAML mapping with a single `url` key, holding the URL at which the requirer application is reachable.",
+        examples=["url: http://foo.bar/model_name-app_name\n"],
+    )
+
+    @field_validator("ingress", mode="before")
+    @classmethod
+    def decode_ingress(cls, value: object) -> object:
+        return yaml.safe_load(value) if isinstance(value, str) else value
 
 
-class ProviderSchema(DataBagSchema):
-    """Provider schema for Ingress."""
+class RequirerAppData(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "model": "model_name",
+                    "name": "app_name",
+                    "host": "app-0.app-endpoints.model_name.svc.cluster.local",
+                    "port": "4242",
+                },
+                {
+                    "model": "model_name",
+                    "name": "app_name",
+                    "host": "app-0.app-endpoints.model_name.svc.cluster.local",
+                    "port": "4242",
+                    "strip-prefix": "true",
+                    "redirect-https": "true",
+                },
+            ]
+        }
+    )
 
-    app: MyProviderData
+    model: str = Field(
+        description="The name of the model the requirer application is in.",
+        examples=["model_name"],
+    )
+    name: str = Field(
+        description="The name of the application requesting ingress.",
+        examples=["app_name"],
+    )
+    host: str = Field(
+        description="The hostname at which the ingress can reach the requirer's leader unit. Defaults to the leader's FQDN.",
+        examples=["app-0.app-endpoints.model_name.svc.cluster.local"],
+    )
+    port: str = Field(
+        description="The port on the requirer's leader unit that the ingress routes traffic to, as a decimal integer.",
+        examples=["4242"],
+    )
+    strip_prefix: str | None = Field(
+        default=None,
+        alias="strip-prefix",
+        description="`true` if the ingress should strip the URL's path prefix before forwarding a request to the requirer. Any other value, or no value, means false.",
+        examples=["true"],
+    )
+    redirect_https: str | None = Field(
+        default=None,
+        alias="redirect-https",
+        description="`true` if the ingress should redirect HTTP requests to HTTPS. Any other value, or no value, means false.",
+        examples=["true"],
+    )
 
 
-class IngressRequirerData(BaseModel):
-    port: str  # The port the application wishes to be exposed. Stringified int.
-    host: str  # Hostname the application wishes to be exposed.
-    model: str  # the model the application is in.
-    name: str  # the name of the application requesting ingress.
-
-
-class RequirerSchema(DataBagSchema):
-    """Requirer schema for Ingress."""
-
-    app: IngressRequirerData
+ProviderUnitData = None
+RequirerUnitData = None
