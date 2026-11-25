@@ -306,12 +306,12 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/grafana_datasource_exchange/",
     "summary": "Share UIDs for Grafana datasources between charms.",
-    "description": "The `grafana_datasource_exchange` interface allows charms that generate telemetry and have a reference to the datasources where said telemetry is queriable, to share those references to other charms for correlation and cross-referencing purposes.\n\nThis is a symmetrical relation, where implementers broadcast the same information regardless of whether they are the provider or requirer.\nTo avoid constraints on integration topology, charms should implement both a requirer and provider endpoint for this interface.",
+    "description": "The `grafana_datasource_exchange` interface allows charms that generate telemetry and have a reference to the datasources where said telemetry is queriable, to share those references with other charms for correlation and cross-referencing purposes.\n\nThis is a symmetrical relation, where implementers send the same information whether they are the provider or the requirer.\nThe datasource UIDs come from Grafana, over the `grafana_datasource` interface.",
     "tags": [
       "internal",
       "observability"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "hydra_endpoints",
