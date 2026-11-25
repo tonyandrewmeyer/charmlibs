@@ -2,7 +2,7 @@
 # See LICENSE file for licensing details.
 
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, Json
 
 
 class VeleroBackupSpec(BaseModel):
@@ -10,82 +10,122 @@ class VeleroBackupSpec(BaseModel):
 
     include_namespaces: list[str] | None = Field(
         None,
-        alias="include-namespaces",
-        description="List of namespaces to include in the backup (None means all namespaces).",
+        description="Namespaces to include in the backup. If not set, all namespaces are included.",
         title="Included Namespaces",
         examples=[["kubeflow"]],
     )
     include_resources: list[str] | None = Field(
         None,
-        alias="include-resources",
-        description="List of resource kinds to include (None means all resource types).",
+        description="Resource kinds to include in the backup. If not set, all resource kinds are included.",
         title="Included Resources",
         examples=[["profiles.kubeflow.org", "deployments"]],
     )
     exclude_namespaces: list[str] | None = Field(
         None,
-        alias="exclude-namespaces",
-        description="List of namespaces to exclude from the backup.",
+        description="Namespaces to exclude from the backup.",
         title="Excluded Namespaces",
         examples=[["default"]],
     )
     exclude_resources: list[str] | None = Field(
         None,
-        alias="exclude-resources",
-        description="List of resource kinds to exclude from the backup.",
+        description="Resource kinds to exclude from the backup.",
         title="Excluded Resources",
         examples=[["pods"]],
     )
-    include_cluster_resources: bool = Field(
-        False,
-        alias="include-cluster-resources",
-        description="Whether to include cluster-scoped resources in the backup.",
-        title="Include Cluster Resources",
-        examples=[True],
-    )
     label_selector: dict[str, str] | None = Field(
         None,
-        alias="label-selector",
-        description="Label selector to filter resources for backup (e.g. {'app': 'kubeflow'}).",
+        description="Labels that a resource must have to be included in the backup.",
         title="Label Selector",
-        examples=[{"app": "kubeflow"}],
+        examples=[{"app.kubernetes.io/name": "mlmd"}],
     )
     ttl: str | None = Field(
         None,
-        description="Optional TTL (time-to-live) for the backup (e.g. '72h' or '30d').",
+        description="How long to keep the backup, as a duration in hours, minutes, and seconds. If not set, Velero's default is used.",
         title="Backup TTL",
-        examples=["24h"],
+        examples=["24h", "72h30m"],
+    )
+    include_cluster_resources: bool | None = Field(
+        None,
+        description="Whether to include cluster-scoped resources in the backup. If not set, Velero decides based on the other filters.",
+        title="Include Cluster Resources",
+        examples=[True],
+    )
+    schedule: str | None = Field(
+        None,
+        description="A cron expression for scheduled backups. If not set, backups are only made on demand.",
+        title="Schedule",
+        examples=["0 2 * * *"],
+    )
+    paused: bool | None = Field(
+        None,
+        description="Whether the schedule is paused. Only used when `schedule` is set.",
+        title="Paused",
+        examples=[False],
+    )
+    skip_immediately: bool | None = Field(
+        None,
+        description="Whether to skip the backup that would otherwise be made as soon as the schedule is created. Only used when `schedule` is set.",
+        title="Skip Immediately",
+        examples=[False],
+    )
+    use_owner_references_in_backup: bool | None = Field(
+        None,
+        description="Whether backups made by the schedule are owned by the schedule, so that they're removed when it is. Only used when `schedule` is set.",
+        title="Use Owner References in Backup",
+        examples=[False],
     )
 
 
-class RequirerAppData(BaseModel):
-    """Pydantic model for the requirer's application databag."""
+class ProviderAppData(BaseModel):
+    """Pydantic model for the provider's application databag."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "app": "kubeflow-profiles",
+                    "relation_name": "profiles-backup-config",
+                    "model": "kubeflow",
+                    "spec": '{"include_namespaces":["kubeflow"],"include_resources":["profiles.kubeflow.org"],"exclude_namespaces":null,"exclude_resources":null,"label_selector":{"app":"kubeflow"},"ttl":null,"include_cluster_resources":false,"schedule":null,"paused":null,"skip_immediately":null,"use_owner_references_in_backup":null}',
+                },
+                {
+                    "app": "my-app",
+                    "relation_name": "backup",
+                    "model": "my-model",
+                    "spec": '{"include_namespaces":["my-namespace"],"include_resources":null,"exclude_namespaces":null,"exclude_resources":null,"label_selector":null,"ttl":"24h","include_cluster_resources":null,"schedule":"0 2 * * *","paused":false,"skip_immediately":false,"use_owner_references_in_backup":false}',
+                },
+            ]
+        }
+    )
 
     app: str = Field(
         ...,
-        description="Name of the client application requesting backup.",
+        description="Name of the client application requesting the backup.",
         title="Client Application Name",
-        examples=["kubeflow"],
+        examples=["kubeflow-profiles"],
     )
     relation_name: str = Field(
         ...,
-        description="Name of the relation on the client providing this spec.",
+        description="Name of the endpoint on the client application that this relation uses.",
         title="Client Relation Name",
-        examples=["profiles-backup"],
+        examples=["profiles-backup-config"],
     )
     model: str = Field(
         ...,
-        description="Model name of the client application.",
+        description="Name of the model that the client application is in.",
         title="Client Model Name",
-        examples=["kubeflow-model"],
+        examples=["kubeflow"],
     )
-    spec: VeleroBackupSpec = Field(
+    spec: Json[VeleroBackupSpec] = Field(
         ...,
-        description="Backup specification details (namespaces, resources, etc.).",
+        description="What to back up, as a JSON object.",
         title="Velero Backup Spec",
+        examples=[
+            '{"include_namespaces":["kubeflow"],"include_resources":["profiles.kubeflow.org"]}'
+        ],
     )
 
 
-ProviderAppData = None
 ProviderUnitData = None
+RequirerAppData = None
 RequirerUnitData = None

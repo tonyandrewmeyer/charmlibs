@@ -1,14 +1,11 @@
 name: velero_backup_config
 version: 0
-status: draft
-summary: Configure Kubernetes backup requirements for Velero.
+status: published
+lib: charms.velero_libs.velero_backup_config
+summary: Tell the Velero Operator what Kubernetes data to back up.
 description: |
-  The `velero_backup_config` interface allows client charms to specify Kubernetes backup requirements to a Velero Operator charm.
-  The requirer charm (client) provides backup specifications including namespaces, resource types, and retention policies, while the provider charm (Velero Operator) receives these specifications and uses them to execute backup operations.
-
-requirers:
-  - name: velero-operator
-    url: https://www.github.com/canonical/velero-operator
+  The `velero_backup_config` interface allows a client charm to tell the Velero Operator charm what Kubernetes data to back up, without the client needing elevated permissions in the cluster.
+  The provider charm (the client) provides a backup specification, including the namespaces and resource kinds to include or exclude, and the requirer charm (the Velero Operator) uses it to create Velero backups and schedules.
 
 providers:
   - name: mlmd-operator
@@ -20,5 +17,11 @@ providers:
   - name: kubeflow-profiles-operator
     url: https://github.com/canonical/kubeflow-profiles-operator
     branch: main
+  - name: velero-integrator
+    url: https://github.com/canonical/velero-integrator
+
+requirers:
+  - name: velero-operator
+    url: https://github.com/canonical/velero-operator
 
 maintainer: analytics
