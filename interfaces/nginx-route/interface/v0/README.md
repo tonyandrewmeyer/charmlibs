@@ -1,63 +1,25 @@
-# `nginx-route/v0`
-
-## Overview
-
-This relation interface describes the expected behaviour of any charm 
-interfacing with Kubernetes Nginx ingress resources.
-
-## Usage
-
-An application charm can use the `nginx-route` relation to request the creation
-of a Nginx ingress resource in the Kubernetes cluster. The specific 
-configuration of the ingress resources can be controlled by the data provided
-by the relation's requirer. The [`nginx_route` charm library](https://charmhub.io/nginx-ingress-integrator/libraries/nginx_route)
-can be used to handle the provider and requirer sides of this relation.
-
-## Direction
-
-The `nginx-route` interface is a one-way relation. The requirer of this relation
-provides the configuration for the required ingress resources as relation data,
-and the provider does not return anything in the relation.
+# nginx-route
 
 ## Behavior
 
-The requirer and the provider must adhere to a certain set of criteria to be 
-considered compatible with the interface.
+Keywords are as in RFC 2119.
 
 ### Provider
 
-- Is expected to create ingress resources in the Kubernetes cluster if the 
-requirer's requirements are valid.
-- Is expected to display an error message in the charm status and ignore 
-requirer's request, if the request specified by the requirer is not valid.
-- Is expected to create ingress resources with host-based routing.
+- MUST create Nginx ingress resources in the Kubernetes cluster, with host-based routing, when the requirer's configuration is valid.
+- If the requirer's configuration is not valid (for example, `service-hostname`, `service-name`, or `service-port` is missing, or a hostname is invalid), MUST ignore the request and report the error in its status.
+- SHOULD update the ingress resources when the requirer's application databag changes.
+- SHOULD remove the ingress resources when the relation is removed.
+- MUST NOT write to either databag.
+- MAY give its own configuration precedence over the requirer's values.
 
 ### Requirer
 
-- Is expected to provide a valid ingress resource configuration.
+- MUST write a valid ingress configuration to the application databag from the leader unit.
+- SHOULD set `service-namespace` to the namespace the service runs in, since the provider otherwise uses the namespace of its own model.
+- SHOULD remove keys for options it no longer sets, so that the databag holds exactly its current configuration.
+- MUST NOT write to the unit databags.
 
-## Relation Data
+## Precedence in the Nginx Ingress Integrator charm
 
-### Provider
-
-The provider does not provide anything in the relation databag.
-
-[\[Pydantic Schema\]](./schema.py)
-
-### Requirer
-
-The `nginx-route` relation uses the same set of data as in the charm 
-configuration of the Nginx ingress integrator charm, with the exception that
-`service-hostname`, `service-name`, `service-port`, and `service-namespace`
-are required in the relation data.
-
-[\[Pydantic Schema\]](./schema.py)
-
-#### Example
-```yaml
-application-data:
-  service-hostname: example.test
-  service-name: test-app
-  service-port: 8080
-  service-namespace: test-namespace
-```
+The databag keys match the options of the Nginx Ingress Integrator charm's configuration. When an option is set in that charm's configuration, it takes precedence over the value in the relation, except for `service-name`, `service-port`, and `path-routes`, where the relation value takes precedence. Options whose configuration default is not empty, such as `max-body-size` and the `proxy-*` timeouts, therefore only take effect from the relation when the charm's configuration sets them to 0.

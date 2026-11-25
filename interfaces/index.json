@@ -595,12 +595,12 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/nginx-route/",
     "summary": "Create an Nginx ingress resource in a Kubernetes cluster.",
-    "description": "The `nginx_route` interface allows charms to request the creation of an Nginx ingress resource in the Kubernetes cluster.\nThe requirer charm supplies the configuration for the ingress resources.\nThe provider charm creates the resource as requested.",
+    "description": "The `nginx-route` interface allows charms to request the creation of an Nginx ingress resource in the Kubernetes cluster.\nThe requirer charm supplies the configuration for the ingress resource, using the same option names as the Nginx Ingress Integrator charm's configuration.\nThe provider charm creates the resource as requested, and does not send anything back.",
     "tags": [
       "ingress",
       "networking"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "oauth",
