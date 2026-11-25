@@ -732,12 +732,12 @@
     "lib_url": "https://pypi.org/project/object-storage-charmlib",
     "lib_docs_url": "https://github.com/canonical/object-storage-integrator/blob/main/lib/README.md",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/s3/",
-    "summary": "",
-    "description": "",
+    "summary": "Access S3-compatible object storage providers.",
+    "description": "The `s3` interface allows charms to access S3-compatible object storage, such as AWS S3, MinIO, Ceph, or Rook, with bucket-specific credentials and connection details.\nThe provider charm shares the configuration for a bucket, with the credentials in a Juju secret, while the requirer charm can ask for a bucket and a path, which the provider might ignore.",
     "tags": [
       "data"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "saml",

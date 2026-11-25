@@ -34,7 +34,34 @@ class _BareStringDatabag(BaseModel):
 class ProviderAppData(_BareStringDatabag):
     """Data expected on the provider side for the s3 v1 interface."""
 
-    model_config = ConfigDict(strict=True, populate_by_name=True)
+    model_config = ConfigDict(
+        strict=True,
+        populate_by_name=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "version": "1",
+                    "secret-extra": "secret://91f805c5-5b49-47a3-8e7b-70befa766caf/d40rbhnmp25c76d6bdn0",
+                    "bucket": "mybucket",
+                    "path": "my/path/",
+                    "endpoint": "https://my-s3-endpoint/",
+                    "region": "us-east-1",
+                    "s3-uri-style": "path",
+                    "storage-class": "glacier",
+                    "tls-ca-chain": '["-----BEGIN CERTIFICATE-----\\nMIIB...\\n-----END CERTIFICATE-----"]',
+                    "s3-api-version": "4",
+                    "attributes": "Cache-Control=max-age=90000,min-fresh=9000;X-Amz-Server-Side-Encryption-Customer-Key=CuStoMerKey=",
+                    "delete-older-than-days": "30",
+                },
+                {
+                    "version": "1",
+                    "access-key": "my-s3-access-key",
+                    "secret-key": "my-s3-secret-key",
+                    "endpoint": "https://my-s3-endpoint/",
+                },
+            ]
+        },
+    )
 
     bucket: str | None = Field(
         default=None,
@@ -65,7 +92,7 @@ class ProviderAppData(_BareStringDatabag):
         default=None,
         alias="secret-extra",
         description=(
-            "A Juju Secret ID that points to a secret containing access-key and"
+            "A Juju secret ID that points to a secret containing access-key and"
             " secret-key for connecting to the object storage."
         ),
         examples=["secret://91f805c5-5b49-47a3-8e7b-70befa766caf/d40rbhnmp25c76d6bdn0"],
@@ -136,10 +163,10 @@ class ProviderAppData(_BareStringDatabag):
         default=None,
         alias="tls-ca-chain",
         description=(
-            "The complete CA chain, which can be used for HTTPS validation."
-            " A JSON array on the wire."
+            "The complete CA chain, which can be used for HTTPS validation, as a list of"
+            " PEM certificates. A JSON array on the wire."
         ),
-        examples=[["base64-encoded-ca-chain=="]],
+        examples=[["-----BEGIN CERTIFICATE-----\nMIIB...\n-----END CERTIFICATE-----"]],
         title="TLS CA Chain",
     )
 
@@ -242,7 +269,24 @@ class ProviderAppData(_BareStringDatabag):
 class RequirerAppData(_BareStringDatabag):
     """Data expected on the requirer side for the s3 v1 interface."""
 
-    model_config = ConfigDict(strict=True, populate_by_name=True)
+    model_config = ConfigDict(
+        strict=True,
+        populate_by_name=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "version": "1",
+                    "requested-secrets": '["access-key", "secret-key"]',
+                    "bucket": "mybucket",
+                    "path": "my/path/",
+                },
+                {
+                    "version": "1",
+                    "requested-secrets": '["access-key", "secret-key"]',
+                },
+            ]
+        },
+    )
 
     bucket: str | None = Field(
         default=None,
@@ -282,7 +326,7 @@ class RequirerAppData(_BareStringDatabag):
     requested_secrets: list[str] | None = Field(
         default=None,
         alias="requested-secrets",
-        description="Any provider field which should be transferred as a Juju Secret. A JSON array on the wire.",
+        description="Any provider field which should be transferred as a Juju secret. A JSON array on the wire.",
         examples=[["access-key", "secret-key"]],
         title="Requested secrets",
     )
@@ -304,7 +348,21 @@ class RequirerAppData(_BareStringDatabag):
 class RequirerUnitData(_BareStringDatabag):
     """The requirer's unit databag, written by the library for its own bookkeeping."""
 
-    model_config = ConfigDict(strict=True, populate_by_name=True)
+    model_config = ConfigDict(
+        strict=True,
+        populate_by_name=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "requested-secrets": '["access-key", "secret-key"]',
+                    "data": (
+                        '{"version": "1", "secret-extra": "secret://91f805c5-5b49-47a3-8e7b-70befa766caf/d40rbhnmp25c76d6bdn0",'
+                        ' "bucket": "mybucket", "path": "my/path/", "endpoint": "https://my-s3-endpoint/"}'
+                    ),
+                },
+            ]
+        },
+    )
 
     requested_secrets: list[str] | None = Field(
         default=None,
