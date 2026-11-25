@@ -1,43 +1,50 @@
 # Copyright 2023 Canonical
 # See LICENSE file for licensing details.
-"""This file defines the schemas for the provider and requirer sides of the openfga interface.
+"""This file defines the schemas for the provider and requirer sides of the openfga interface."""
 
-Examples:
-    Provider:
-        unit: <empty>
-        app: {"openfga":
-                 {"grpc_api_url": "http://10.10.0.17:8081",
-                  "http_api_url": "http://10.10.0.17:8080",
-                  "token": "test-token",
-                  "token_secret_id": null,
-                  "store_id": "01GK13VYZK62Q1T0X55Q2BHYD6",
-                 }
-             }
-
-    Requirer:
-        unit: <empty>
-        app: {"store_name": "test-store-name"}
-"""
-
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ProviderAppData(BaseModel):
     """Provider data schema for OpenFGA v1."""
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            'examples': [
+                {
+                    'grpc_api_url': 'openfga-k8s.mymodel.svc.cluster.local:8081',
+                    'http_api_url': 'http://openfga-k8s.mymodel.svc.cluster.local:8080',
+                    'store_id': '01GK13VYZK62Q1T0X55Q2BHYD6',
+                    'token_secret_id': 'secret:cs8l6hvmp25c77r5ou5g',
+                },
+                {
+                    'grpc_api_url': 'openfga-k8s.mymodel.svc.cluster.local:8081',
+                    'http_api_url': 'http://openfga-k8s.mymodel.svc.cluster.local:8080',
+                },
+                {
+                    'grpc_api_url': 'http://10.10.0.17:8081',
+                    'http_api_url': 'http://10.10.0.17:8080',
+                    'store_id': '01GK13VYZK62Q1T0X55Q2BHYD6',
+                    'token': 'test-token',
+                },
+            ]
+        }
+    )
+
     grpc_api_url: str = Field(
-        description=('The URL of the gRPC API.'),
+        description='The URL of the gRPC API.',
         title='gRPC URL',
-        examples=['http://10.10.0.17:8081'],
+        examples=['openfga-k8s.mymodel.svc.cluster.local:8081', 'http://10.10.0.17:8081'],
     )
     http_api_url: str = Field(
-        description=('The URL of the HTTP API.'),
+        description='The URL of the HTTP API.',
         title='HTTP URL',
-        examples=['http://10.10.0.17:8080'],
+        examples=['http://openfga-k8s.mymodel.svc.cluster.local:8080', 'http://10.10.0.17:8080'],
     )
     token_secret_id: str | None = Field(
         description=(
-            'Secret ID of the preshared token to be used to connect to the OpenFGA service.'
+            'The ID of the Juju secret that holds the preshared token to connect to the '
+            'OpenFGA service, under the `token` key.'
         ),
         title='Secret ID of the OpenFGA token',
         examples=['secret:cs8l6hvmp25c77r5ou5g'],
@@ -45,35 +52,36 @@ class ProviderAppData(BaseModel):
     )
     token: str | None = Field(
         description=(
-            'The preshared token to be used to connect to the OpenFGA '
-            'service, to be used when juju secrets are not available.'
+            'The preshared token to connect to the OpenFGA service. Older providers '
+            'wrote this when Juju secrets were not available.'
         ),
         title='The OpenFGA token',
         examples=['test-token'],
         default=None,
     )
     store_id: str | None = Field(
-        description='ID of the authentication store that was created.',
+        description='The ID of the authorization store that was created.',
         title='OpenFGA store ID',
         examples=['01GK13VYZK62Q1T0X55Q2BHYD6'],
         default=None,
     )
 
-    @validator('token_secret_id', pre=True)
-    def validate_token(cls, v: str, values: dict) -> str:  # noqa: N805
-        """Validate token_secret_id arg."""
-        if not v and not values['token']:
-            raise ValueError('invalid scheme: neither of token and token_secret_id were defined')
-        return v
-
 
 class RequirerAppData(BaseModel):
     """Requirer data schema for OpenFGA v1."""
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            'examples': [
+                {'store_name': 'test-store'},
+            ]
+        }
+    )
+
     store_name: str = Field(
         description='The name of the authorization store.',
         title='Authorization store name',
-        examples=['auth_store'],
+        examples=['test-store', 'auth_store'],
     )
 
 

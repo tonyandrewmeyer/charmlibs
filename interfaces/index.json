@@ -640,7 +640,7 @@
     "lib_docs_url": "https://canonical.com/juju/docs/charmlibs/reference/charmlibs/interfaces/openfga",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/openfga/",
     "summary": "Set up and connect to an OpenFGA store.",
-    "description": "The `openfga` interface supports setting up an OpenFGA store and connecting to it.\nThe requirer specifies the store name, while the provider creates the store and shares the data needed to connect.",
+    "description": "The `openfga` interface supports setting up an OpenFGA store and connecting to it.\nThe requirer specifies the store name, while the provider creates the store and shares the data needed to connect, with the token in a Juju secret.",
     "tags": [
       "identity-auth"
     ],
