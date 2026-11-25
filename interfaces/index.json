@@ -349,8 +349,8 @@
     "lib_url": "https://charmhub.io/traefik-k8s/libraries/ingress_per_unit",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/ingress_per_unit/",
-    "summary": "",
-    "description": "",
+    "summary": "Request and provide ingress for each unit of an application.",
+    "description": "The `ingress_per_unit` interface allows a charm to request ingress for each of its units separately, rather than for the application as a whole.\nEach requirer unit gives the host and port at which it can be reached, and the provider gives back a URL (or, in TCP mode, a host and port) for each unit.",
     "tags": [
       "ingress",
       "networking"

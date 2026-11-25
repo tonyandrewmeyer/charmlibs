@@ -2,10 +2,15 @@ name: ingress_per_unit
 version: 0
 status: published
 lib: charms.traefik_k8s.ingress_per_unit
+summary: Request and provide ingress for each unit of an application.
+description: |
+  The `ingress_per_unit` interface allows a charm to request ingress for each of its units separately, rather than for the application as a whole.
+  Each requirer unit gives the host and port at which it can be reached, and the provider gives back a URL (or, in TCP mode, a host and port) for each unit.
 
 providers:
   - name: traefik-k8s
     url: https://github.com/canonical/traefik-k8s-operator
+
 requirers:
   - name: prometheus-k8s
     url: https://github.com/canonical/prometheus-k8s-operator
