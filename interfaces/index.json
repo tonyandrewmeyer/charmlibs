@@ -548,14 +548,17 @@
   {
     "name": "mimir_cluster",
     "version": "0",
-    "lib": "",
-    "lib_url": "",
+    "lib": "coordinated-workers",
+    "lib_url": "https://pypi.org/project/coordinated-workers/",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/mimir_cluster/",
     "summary": "Mimir coordinator and worker charm communication.",
-    "description": "The `mimir_cluster` interface supports communication between the [mimir-coordinator-k8s](https://charmhub.io/mimir-coordinator-k8s) and [mimir-worker-k8s](https://charmhub.io/mimir-worker-k8s) charms.",
-    "tags": [],
-    "status": "draft"
+    "description": "The `mimir_cluster` interface supports communication between the [mimir-coordinator-k8s](https://charmhub.io/mimir-coordinator-k8s) and [mimir-worker-k8s](https://charmhub.io/mimir-worker-k8s) charms in a distributed Mimir deployment.\nEach worker application publishes its roles, and each worker unit its address and topology, so that they can join the cluster.\nThe coordinator replies with the Mimir configuration that the workers must run with, and other configuration for the worker charm.",
+    "tags": [
+      "internal",
+      "observability"
+    ],
+    "status": "published"
   },
   {
     "name": "mongodb_client",
