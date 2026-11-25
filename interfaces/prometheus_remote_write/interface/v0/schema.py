@@ -218,7 +218,7 @@ class RequirerAppData(BaseModel):
     )
 
     alert_rules: Json[AlertRules | CompressedAlertRules] | CompressedAlertRules = Field(
-        description='The requirer\'s alert and recording rules, in the format of a Prometheus rule file. The value is either a JSON object, or, if the provider advertises the `lzma` encoding, the same JSON LZMA-compressed and base64-encoded, which keeps large rule sets below the Juju relation data size limit. Compressed rules can be read with `<value> | base64 -d | xz -d | jq`.',
+        description='The requirer\'s alert and recording rules, in the format of a Prometheus rule file. The value is either a JSON object, or, if the provider advertises the `lzma` encoding, the same object LZMA-compressed and base64-encoded, which keeps large rule sets below the Juju relation data size limit. The compressed string can also be JSON-encoded. To read compressed rules, pipe the value through `base64 -d | xz -d | jq`.',
         examples=['{}', _LZMA_RULES],
     )
     scrape_metadata: str | None = Field(
