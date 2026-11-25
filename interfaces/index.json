@@ -222,12 +222,12 @@
     "lib_url": "https://charmhub.io/sdcore-upf-k8s/libraries/fiveg_n4",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/fiveg_n4/",
-    "summary": "",
-    "description": "",
+    "summary": "Get the hostname and port of the N4 interface of a 5G UPF.",
+    "description": "Within 5G, the User Plane Function (UPF) supports features and capabilities to facilitate user plane operation, such as packet routing and forwarding, interconnection to the Data Network, policy enforcement, and data buffering.\nThe `fiveg_n4` interface allows a charm to get the hostname and port of the UPF's N4 interface, so that it can communicate with the UPF over that interface.\nIn a typical 5G network, the N4 interface is used between the UPF and the SMF.",
     "tags": [
       "telco"
     ],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "fiveg_nrf",
