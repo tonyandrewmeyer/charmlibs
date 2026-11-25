@@ -1,67 +1,20 @@
-# `fiveg_core_gnb/v0`
-
-## Usage
-
-Within 5G, the CU is the Central Unit of a RAN (Radio Access Network) and needs to be configured according to the 5G network parameters.
-
-The `fiveg_core_gnb` relation interface describes the expected behavior of any charm claiming to be able to provide or consume the CU (or gNodeB) configuration information.
-
-In a typical 5G network, the provider of this interface would be a CU or a gNodeB. The requirer of this interface would be the NMS (Network Management System).
-
-## Direction
-
-```mermaid
-flowchart TD
-    Provider -- MCC, MNC, TAC, SST, SD --> Requirer
-    Requirer -- CU/gNodeB Identifier --> Provider
-```
-
-As with all Juju relations, the `fiveg_core_gnb` interface consists of two parties: a Provider and a Requirer.
+# fiveg_core_gnb
 
 ## Behavior
 
-Both the Requirer and the Provider need to adhere to criteria to be considered compatible with the interface.
+Keywords are as in RFC 2119.
 
 ### Provider
 
-- Is expected to provide the following data:
-  - TAC (Tracking Area Code)
-  - List of PLMNs
-
-The list of PLMNs should include the following data:
-  - MCC (Mobile Country Code)
-  - MNC (Mobile Network Code)
-  - SST (Slice Service Type)
-  - SD (Slice Differentiator)
-    
+- MUST write `tac` and `plmns` to the application databag from the leader unit.
+- MUST write, in each relation, the configuration of the CU or gNodeB that the requirer names in `gnb-name`.
+- SHOULD NOT write anything in a relation until it has a configuration for the CU or gNodeB that the requirer names.
+- SHOULD add the CU or gNodeB to its configuration under the requirer's `gnb-name`, and SHOULD remove it when the relation is removed.
+- MUST update the databag when the configuration of the CU or gNodeB changes.
 
 ### Requirer
 
-- Is expected to provide a unique identifier of the CU (or gNodeB).
-
-## Relation Data
-
-[\[Pydantic Schema\]](./schema.py)
-
-### Example
-
-```yaml
-provider:
-  app: {
-    "tac": 1,
-    "plmns": [
-      {
-        "mcc": "001",
-        "mnc": "01",
-        "sst": 1,
-        "sd": 1,
-      }
-    ],
-  }
-  unit: {}
-requirer:
-  app: {
-    "gnb-name": "gnb001"
-  }
-  unit: {}
-```
+- MUST write `gnb-name` to the application databag from the leader unit.
+- MUST use a `gnb-name` that is unique among the CUs and gNodeBs that are related to the same provider.
+- MUST use the TAC and PLMNs from the provider to configure the CU or gNodeB.
+- SHOULD treat the relation as not ready until the provider's application databag has a valid `tac` and `plmns`.

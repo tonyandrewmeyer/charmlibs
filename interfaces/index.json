@@ -158,12 +158,12 @@
     "lib_url": "https://charmhub.io/sdcore-nms-k8s/libraries/fiveg_core_gnb",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/fiveg_core_gnb/",
-    "summary": "",
-    "description": "",
+    "summary": "Configure a CU or gNodeB with the TAC and PLMNs of a 5G core network.",
+    "description": "Within 5G, the CU (Central Unit) of a RAN (Radio Access Network), or a gNodeB, needs to be configured according to the parameters of the 5G network.\nThe `fiveg_core_gnb` interface allows a CU or gNodeB to get its configuration from the 5G core, typically from the NMS (Network Management System).\nThe requirer (the CU or gNodeB) provides its unique name, and the provider (the core) provides the TAC (Tracking Area Code) and list of PLMNs (Public Land Mobile Networks) for that name.",
     "tags": [
       "telco"
     ],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "fiveg_f1",
