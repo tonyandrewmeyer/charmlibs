@@ -2,9 +2,16 @@ name: tracing
 
 version: 1
 status: retired
+lib: charms.tempo_k8s.tracing
+summary: Request endpoints for pushing trace data.
+description: |
+  The `tracing` interface supports push-based tracing.
+  The requirer publishes the list of protocols it wants to use to send traces.
+  The provider replies with its host and a port for each requested protocol that it supports, omitting those it does not support.
+  Version 2 of the `charms.tempo_k8s.tracing` library implemented this version, up to LIBPATCH 5.
 
 providers: []
 
 requirers: []
 
-maintainer: observability
+maintainer: tracing-and-profiling
