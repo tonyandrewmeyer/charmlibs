@@ -9,7 +9,7 @@ Keywords are as in RFC 2119.
 - MUST write to the application databag from the leader unit.
 - SHOULD wait for the requirer to write `subject` before doing anything else.
 - MUST create a Karapace user for each relation once the requirer has written `subject`.
-- MUST give the user the access for its role: with `user`, read access to the subjects whose names start with `subject`; with `admin`, full access to every subject. A requirer that doesn't write `extra-user-roles` gets the `user` role.
+- MUST give the user the access for its role. A `user` gets read access to the subjects whose names start with `subject`. An `admin` gets full access to every subject. A requirer that doesn't write `extra-user-roles` gets the `user` role.
 - MAY create the requested subject if it doesn't exist.
 - If the requirer writes `entity-type`, SHOULD create a custom entity with `entity-name` and `entity-password`, and MUST delete it when the relation is removed.
 - MUST delete the user from Karapace when the relation is removed.
