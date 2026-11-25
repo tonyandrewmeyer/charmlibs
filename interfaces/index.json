@@ -623,8 +623,8 @@
     "lib_url": "https://charmhub.io/opencti/libraries/opencti_connector",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/opencti_connector/",
-    "summary": "Connect a single OpenCTI provider to one or more OpenCTI connectors.",
-    "description": "The `opencti_connector` interface supports connecting an OpenCTI provider charm to one or more OpenCTI connectors.\nThe provider charm specifies the expected connector type for each connector relation.\nEach requirer charm shares its OpenCTI URL (and token) for the provider to connect to.",
+    "summary": "Connect OpenCTI connectors to an OpenCTI instance.",
+    "description": "The `opencti_connector` interface connects OpenCTI connector charms to an OpenCTI charm.\nEach provider is a connector, and shares its name and connector type.\nThe requirer is OpenCTI, which creates an OpenCTI user for each connector and shares the OpenCTI URL and a Juju secret with that user's API token.",
     "tags": [
       "security"
     ],

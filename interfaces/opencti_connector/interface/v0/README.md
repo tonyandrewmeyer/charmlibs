@@ -1,61 +1,32 @@
-# `opencti-connector/v0`
-
-## Usage
-
-This relation interface describes the expected behavior of any charm claiming to be able to provide or consume opencti-connector data.
-
-In most cases, this will be accomplished using the [opencti-connector library](https://github.com/canonical/opencti-operator/blob/main/lib/charms/opencti/v0/opencti_connector.py), although charm developers are free to provide alternative libraries as long as they fulfill the behavioral and schematic requirements described in this document.
-
-## Direction
-The `opencti-connector` interface does not implement a typical provider/requirer pattern. The interface is designed specifically for OpenCTI connectors, with the assumption that there will always be a single OpenCTI provider. To streamline the development of 20+ nearly identical connectors, a shared `OpenctiConnectorCharm` base class was created to encapsulate common relation logic, reducing boilerplate and simplifying charm creation. The `OpenctiConnectorCharm` class is inherited by connector charms that want to consume this library, such as the [crowdstrike connector charm](https://github.com/canonical/opencti-operator/tree/main/connectors/crowdstrike).
-
-```mermaid
-flowchart TD
-    Provider -- ConnectorDetails --> Requirer
-    Requirer -- OpenCTIConnection --> Provider
-```
+# opencti_connector
 
 ## Behavior
 
-The requirer and the provider need to adhere to a certain set of criteria to be considered compatible with the interface.
+Keywords are as in RFC 2119.
 
 ### Provider
 
-- It is expected to inherit the `OpenctiConnectorCharm` class.
-- Is it expected to provide the `connector_type`. More information on the different connector types can be found in the [OpenCTI documentation](https://docs.opencti.io/latest/deployment/connectors/#connector-configuration).
-- It is expected to provide the path to the charm root directory containing `charmcraft.yaml` by overriding the `charm_dir` property.
+- MUST write the application databag from the leader unit.
+- MUST relate to at most one OpenCTI application.
+- If it sets `connector_id`, MUST generate it once and keep it for the life of the relation.
+- MUST read the API token from the `token` key of the secret in `opencti_token`, and SHOULD use the latest revision of that secret when it changes.
+- SHOULD wait until both `opencti_url` and `opencti_token` are set before connecting to OpenCTI.
 
 ### Requirer
 
-- Is expected to provide an OpenCTI URL and token that the provider side can connect to. 
+- MUST write the application databag from the leader unit.
+- SHOULD NOT write anything until the provider has set both `connector_charm_name` and `connector_type`.
+- MUST create an OpenCTI user for each connector, with privileges that suit its `connector_type`, and put that user's API token in a Juju secret under the `token` key.
+- MUST grant that secret to the relation.
+- MUST update the secret's content when the user's API token changes, and MUST update `opencti_url` when the URL that OpenCTI is reachable at changes.
+- SHOULD deactivate the OpenCTI user of a connector when its relation is removed.
+- MAY relate to any number of connectors.
 
-## Relation Data
+## Implementation notes
 
-Pydantic schemas for provider and requirer can be found [\[here\]](./schema.py)
+The `opencti_connector` library provides a base class, `OpenctiConnectorCharm`, that implements the provider side for connector charms. A connector charm that inherits from it:
 
-### Provider
+- MUST implement the `connector_type` property.
+- MUST implement the `charm_dir` property, returning the charm's root directory (the one with `charmcraft.yaml` in it), so the class can read the charm's configuration options and pass them to the connector as environment variables.
 
-Exposes the `connector_name` and `connector_type` that OpenCTI requires to create a user with 
-the appropriate privileges. `connector_name` and `connector_type` should be placed in 
-the **application** databag. 
-
-#### Example
-```yaml
-application-data: {
-    "connector_charm_name": "connector-charm-name",
-    "connector_type": "connector-type",
-}
-```
-
-### Requirer
-
-Exposes a `opencti_url` field containing the url at which OpenCTI is reachable. It also provides an `opencti_token` for authentication while reaching OpenCTI. Should be placed in the **application** databag.
-
-#### Example
-
-```yaml
-application_data: {
-   "opencti_url": "http://opencti-endpoints.stg-opencti.svc:8080",
-    "opencti_token": "secret:secret-id",
-}
-```
+The class also sets `connector_charm_name` to the charm's name (not the application's), sets `connector_id` to a random UUID if it isn't set yet, and blocks if the application has more than one unit.
