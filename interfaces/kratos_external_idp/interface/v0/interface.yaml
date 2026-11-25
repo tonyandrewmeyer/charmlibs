@@ -3,13 +3,19 @@ internal: true
 
 version: 0
 status: draft
+lib: charms.kratos_external_idp_integrator.kratos_external_provider
+summary: Configure an external identity provider for Ory Kratos.
+description: |
+  The `kratos_external_idp` interface allows Ory Kratos to let users log in with an OpenID Connect provider outside the Juju model.
+  The provider charm passes Kratos the client credentials that an administrator created on the external identity provider.
+  The requirer, the Kratos charm, passes back the redirect URI for the administrator to register on the external identity provider.
 
 providers:
   - name: kratos-external-idp-integrator
-    url: https://www.github.com/canonical/kratos-external-idp-integrator
+    url: https://github.com/canonical/kratos-external-idp-integrator
 
 requirers:
   - name: kratos
-    url: https://www.github.com/canonical/kratos-operator
+    url: https://github.com/canonical/kratos-operator
 
 maintainer: identity
