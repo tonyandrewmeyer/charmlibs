@@ -91,8 +91,8 @@
     "lib_url": "https://charmhub.io/grafana-agent/libraries/cos_agent",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/cos_agent/",
-    "summary": "Machine-charm-specific interface for managing multiple observability-related data streams.",
-    "description": "The `cos_agent` interface allows machine charms to send telemetry \u2014 such as metrics, logs, dashboards, and alert rules \u2014 to Opentelemetry Colector or Grafana Agent charms.\n\nThis interface is designed specifically for machine charms, where the requirer is typically the [grafana-agent](https://charmhub.io/grafana-agent) and the [opentelemetry-collector](https://github.com/canonical/opentelemetry-collector-operator/) subordinate charms.",
+    "summary": "Send several kinds of telemetry from a machine charm to a subordinate telemetry agent.",
+    "description": "The `cos_agent` interface allows machine charms to send telemetry, such as metrics, logs, dashboards, and alert rules, to the [opentelemetry-collector](https://charmhub.io/opentelemetry-collector) or [grafana-agent](https://charmhub.io/grafana-agent) subordinate charms, over a single relation.\nThe provider is the principal charm, and describes what to scrape, which snap log slots to read, and its alert rules and dashboards.\nThe requirer is the subordinate charm, which forwards all of that to COS, and replies with the tracing receivers that the provider requested.",
     "tags": [
       "observability"
     ],
