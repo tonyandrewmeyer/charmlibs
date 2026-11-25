@@ -483,12 +483,12 @@
     "lib_url": "https://charmhub.io/kubeflow-dashboard/libraries/kubeflow_dashboard_links",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/kubeflow_dashboard_links/",
-    "summary": "",
-    "description": "",
+    "summary": "Add links to the Kubeflow Dashboard.",
+    "description": "The `kubeflow_dashboard_links` interface allows charms to add links to the Kubeflow Dashboard, in the format that the dashboard needs.\nThe requirer charm sends zero or more links, and the provider charm, the dashboard, shows them in its menu, quick links, external links, or documentation.",
     "tags": [
       "operations"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "ldap",
