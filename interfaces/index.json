@@ -168,14 +168,14 @@
   {
     "name": "fiveg_f1",
     "version": "0",
-    "lib": "",
+    "lib": "charms.oai_ran_cu_k8s.fiveg_f1",
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/fiveg_f1/",
-    "summary": "",
-    "description": "",
+    "summary": "Connect a 5G DU to a CU over the F1 interface.",
+    "description": "Within 5G RAN (Radio Access Network) architecture, the Functional Split (F1) interface carries the communication between the Central Unit (CU) and the Distributed Unit (DU).\nThe `fiveg_f1` interface allows a DU to connect to a CU over F1.\nThe provider (the CU) provides the IP address and port that it uses for F1 traffic, and the TAC (Tracking Area Code) and PLMNs (Public Land Mobile Networks) that it is configured with.\nThe requirer (the DU) provides the port that it uses for F1 traffic.",
     "tags": [],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "fiveg_gnb_identity",
