@@ -541,7 +541,7 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/milter/",
     "summary": "Provide or consume a mail filter.",
-    "description": "The `milter` interface allows charms to connect to a charm serving as a mail filter (milter).\nThe provider charm shares the information needed to connect.",
+    "description": "The `milter` interface allows charms to connect to a charm serving as a mail filter (milter).\nEach provider unit shares the port that its milter listens on, and the requirer combines it with that unit's address to connect.",
     "tags": [],
     "status": "published"
   },
