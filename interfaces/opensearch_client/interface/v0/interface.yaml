@@ -1,16 +1,25 @@
 name: opensearch_client
 version: 0
-status: draft
+status: published
 lib: charms.data_platform_libs.data_interfaces
 summary: Access OpenSearch and ElasticSearch clusters.
 description: |
   The `opensearch_client` interface allows charms to access OpenSearch and ElasticSearch clusters with user-specific credentials and index permissions transmitted via Juju Secrets.
   The provider charm creates users and manages index access controls, while the requirer charm requests access to specific indices with optional role permissions.
+  It's likely to suit any application that uses the ElasticSearch API.
 
 providers:
-  - name: opensearch-operator
-    url: https://www.github.com/canonical/opensearch-operator
+  - name: opensearch
+    url: https://github.com/canonical/opensearch-operator/tree/main/machine
+  - name: opensearch-k8s
+    url: https://github.com/canonical/opensearch-operator/tree/main/kubernetes
 
-requirers: []
+requirers:
+  - name: data-integrator
+    url: https://github.com/canonical/data-integrator
+  - name: opensearch-dashboards
+    url: https://github.com/canonical/opensearch-dashboards-operator/tree/main/machine
+  - name: opensearch-dashboards-k8s
+    url: https://github.com/canonical/opensearch-dashboards-operator/tree/main/kubernetes
 
-maintainer: data-platform-nosql
+maintainer: data-nosql
