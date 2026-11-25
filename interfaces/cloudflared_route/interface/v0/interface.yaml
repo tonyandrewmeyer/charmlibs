@@ -3,12 +3,18 @@ internal: false
 lib: charms.cloudflare_configurator.cloudflared_route
 summary: Configure a cloudflared tunnel.
 description: |
-  The `cloudflared_route` interface allows information to be exchanged between the cloudflared tunnel configurator charm and the cloudflared tunnel charm.
+  The `cloudflared-route` interface allows a charm that holds the configuration for a cloudflared tunnel to pass it to a charm that runs the tunnel.
+  The provider charm shares the tunnel token, in a Juju secret, and optionally a DNS nameserver for the tunnel to use.
 
 version: 0
-status: draft
+status: published
 
-providers: []
-requirers: []
+providers:
+  - name: cloudflare-configurator
+    url: https://github.com/canonical/cloudflare-configurator-operator
+
+requirers:
+  - name: cloudflared
+    url: https://github.com/canonical/cloudflared-operator
 
 maintainer: platform-engineering

@@ -1,56 +1,24 @@
-# `cloudflared_route/v0`
-
-## Usage
-
-The `cloudflared_route` interface is designed to facilitate information exchange between the cloudflared tunnel configurator charm and the cloudflared tunnel charm.
-
-## Direction
-
-The `cloudflared_route` interface follows a provider/requirer pattern. The requirer is a charm that runs the cloudflared tunnel, and the provider is the charm that supplies configurations for the cloudflared tunnel.
-
-```mermaid
-flowchart TD
-  Provider -- tunnel_token_secret_id,nameserver --> Requirer
-```
+# cloudflared-route
 
 ## Behavior
 
-The following are the criteria that a Provider and Requirer need to adhere to in order to be compatible with this interface.
+Keywords are as in RFC 2119.
 
 ### Provider
 
-- Is expected to provide a cloudflared tunnel token via a Juju secret.
-  - The Juju secret ID should be placed in the integration application databag with the name `tunnel_token_secret_id`.
-  - The Juju secret should be readable by the requirer charm.
-  - The Juju secret should contain one field, `tunnel-token`, with the cloudflared tunnel token as its content.
-- Is expected to update the cloudflared tunnel token either by creating a new Juju secret and replacing the Juju secret ID in `tunnel_token_secret_id`, or by updating the content of the existing Juju secret ID.
-- Is expected to optionally include a `nameserver` field in the integration databag.
-  - The `nameserver` field must be an IPv4 or IPv6 address of a DNS nameserver.
-  - The nameserver provided in this field must listen on port 53.
-  - The nameserver provided in this field must be able to resolve public domains.
-  - The nameserver provided in this field must be able to resolve any domain configured as the backend service for the cloudflared tunnel.
+- MUST write the tunnel configuration to the application databag from the leader unit.
+- MUST put the cloudflared tunnel token in a Juju secret, under the `tunnel-token` key, and grant the secret to the relation.
+- When the tunnel token changes, MUST either update the content of the existing secret or create a new secret and replace `tunnel_token_secret_id`.
+- SHOULD remove the secret's revisions when the relation is removed.
+- If it sets `nameserver`, the nameserver MUST listen on port 53.
+- If it sets `nameserver`, the nameserver MUST be able to resolve public domains, and any domain configured as a backend service for the cloudflared tunnel.
 
 ### Requirer
 
-- Is expected to run a cloudflared tunnel instance with the provided tunnel token.
-- Is expected to restart the cloudflared tunnel instance with a new tunnel token if the token changes in the integration.
-- Is expected to run the cloudflared tunnel instance using the system's default nameserver if `nameserver` is not provided in the integration.
-- Is expected to run the cloudflared tunnel instance with the specified `nameserver` if it is provided in the integration.
-
-## Relation Data
-
-[\[Pydantic Schema\]](./schema.py)
-
-### Provider
-
-The Provider provides the result of the requirer's request. It should be placed in the application databag.
-
-#### Example
-```json
-  {
-    "application-data": {
-      "tunnel_token_secret_id": "secret:csn5caau557j9bojn7rg",
-      "nameserver": "1.1.1.1"
-    }
-  }
-```
+- MUST NOT write to either databag.
+- SHOULD treat the relation as not ready until `tunnel_token_secret_id` is set.
+- MUST run a cloudflared tunnel with the tunnel token from the secret.
+- MUST restart the tunnel with the new token when the token changes, and SHOULD use the latest revision of the secret.
+- SHOULD treat the relation as invalid if the secret doesn't have a `tunnel-token` key.
+- If `nameserver` is set, MUST run the tunnel with that nameserver; otherwise, MUST run the tunnel with the system's default nameserver.
+- MAY be integrated with several providers, and if it is, MUST run a separate tunnel for each relation.

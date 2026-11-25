@@ -62,12 +62,12 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/cloudflared_route/",
     "summary": "Configure a cloudflared tunnel.",
-    "description": "The `cloudflared_route` interface allows information to be exchanged between the cloudflared tunnel configurator charm and the cloudflared tunnel charm.",
+    "description": "The `cloudflared-route` interface allows a charm that holds the configuration for a cloudflared tunnel to pass it to a charm that runs the tunnel.\nThe provider charm shares the tunnel token, in a Juju secret, and optionally a DNS nameserver for the tunnel to use.",
     "tags": [
       "ingress",
       "networking"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "connect_client",
