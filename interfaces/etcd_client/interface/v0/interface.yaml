@@ -1,6 +1,6 @@
 name: etcd_client
 version: 0
-status: draft
+status: published
 lib: charms.data_platform_libs.data_interfaces
 summary: Access etcd clusters with credentials and TLS configuration.
 description: |
@@ -8,10 +8,12 @@ description: |
   The provider charm creates etcd users and roles based on requirer requests, while the requirer charm shares certificate information and key access prefixes.
 
 providers:
-  - name: charmed-etcd-operator
+  - name: charmed-etcd
     url: https://github.com/canonical/charmed-etcd-operator
     branch: 3.6/edge
 
-requirers: []
+requirers:
+  - name: data-integrator
+    url: https://github.com/canonical/data-integrator
 
-maintainer: data-platform-nosql
+maintainer: data-nosql
