@@ -512,7 +512,7 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/litmus_auth/",
     "summary": "Exchange gRPC server endpoints for communication between Litmus auth and backend charms.",
-    "description": "The `litmus_auth` interface enables communication between Litmus auth and Litmus backend charms.\nBoth the provider and requirer publish their respective gPRC server's endpoint.",
+    "description": "The `litmus_auth` interface enables communication between the Litmus auth and Litmus backend charms.\nThe provider (the auth server) and the requirer (the backend server) each publish their gRPC server's endpoint, and whether it accepts TLS connections.",
     "tags": [
       "internal",
       "operations"

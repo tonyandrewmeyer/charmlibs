@@ -4,8 +4,8 @@ status: draft
 lib: litmus-libs
 summary: Exchange gRPC server endpoints for communication between Litmus auth and backend charms.
 description: |
-  The `litmus_auth` interface enables communication between Litmus auth and Litmus backend charms.
-  Both the provider and requirer publish their respective gPRC server's endpoint.
+  The `litmus_auth` interface enables communication between the Litmus auth and Litmus backend charms.
+  The provider (the auth server) and the requirer (the backend server) each publish their gRPC server's endpoint, and whether it accepts TLS connections.
 
 providers:
   - name: litmus-auth-k8s
@@ -15,4 +15,4 @@ requirers:
   - name: litmus-backend-k8s
     url: https://github.com/canonical/litmus-operators
 
-maintainer: observability
+maintainer: tracing-and-profiling

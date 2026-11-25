@@ -1,26 +1,50 @@
-"""This file defines the schemas for the provider and requirer sides of this relation interface."""
+"""This file defines the schemas for the provider and requirer sides of the litmus_auth interface.
 
-from pydantic import BaseModel, Field
+Both sides write the same fields to their application databag.
+"""
+
+from pydantic import BaseModel, ConfigDict, Field, Json
 
 
 class AppSchema(BaseModel):
-    """Application databag schema for the provider & requrier side of the litmus_auth interface."""
+    """Application databag schema for the provider and requirer sides of the litmus_auth interface."""
 
-    grpc_server_host: str = Field(
-        description="gRPC server hostname for the litmus auth/backend server.",
-        examples=["some.hostname", "10.64.140.43"],
+    model_config = ConfigDict(
+        json_schema_extra={
+            'examples': [
+                {
+                    'grpc_server_host': '"litmus-auth-k8s.chaos.svc.cluster.local"',
+                    'grpc_server_port': '3030',
+                    'insecure': 'true',
+                    'version': '0',
+                },
+                {
+                    'grpc_server_host': '"litmus-backend-k8s.chaos.svc.cluster.local"',
+                    'grpc_server_port': '8001',
+                    'insecure': 'false',
+                    'version': '0',
+                },
+            ]
+        }
+    )
+
+    grpc_server_host: Json[str] = Field(
+        description='The hostname or IP address of the Litmus auth or backend gRPC server.',
+        examples=['"litmus-auth-k8s.chaos.svc.cluster.local"', '"10.64.140.43"'],
     )
     grpc_server_port: int = Field(
-        description="gRPC server port for the litmus auth/backend server.",
-        examples=[1234, 42424],
+        description='The port of the Litmus auth or backend gRPC server.',
+        examples=['3030', '8001'],
     )
     insecure: bool = Field(
-        description="Whether the gRPC server endpoint should be accessed without TLS (insecure connection).",
         default=False,
+        description='Whether the gRPC server must be accessed without TLS.',
+        examples=['false', 'true'],
     )
     version: int = Field(
-        description="version of this data model.",
         default=0,
+        description='The version of this data model.',
+        examples=['0'],
     )
 
 
