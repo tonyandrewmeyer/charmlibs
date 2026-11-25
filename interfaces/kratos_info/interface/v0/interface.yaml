@@ -4,17 +4,24 @@ internal: true
 version: 0
 status: published
 lib: charms.kratos.kratos_info
+summary: Get information about an Ory Kratos deployment.
+description: |
+  The `kratos_info` interface allows the charms of the Identity Platform to get information about an Ory Kratos deployment.
+  The provider, the Kratos charm, supplies its API endpoints, the names and namespace of the Kubernetes ConfigMaps that hold its identity providers and identity schemas, and which features are enabled.
+  The requirer doesn't write anything.
 
 providers:
-  - name: kratos-operator
+  - name: kratos
     url: https://github.com/canonical/kratos-operator
 
 requirers:
   - name: identity-platform-login-ui-operator
     url: https://github.com/canonical/identity-platform-login-ui-operator
-  - name: oathkeeper-operator
+  - name: oathkeeper
     url: https://github.com/canonical/oathkeeper-operator
   - name: identity-platform-admin-ui
     url: https://github.com/canonical/identity-platform-admin-ui-operator
+  - name: tenant-service
+    url: https://github.com/canonical/tenant-service-operator
 
 maintainer: identity
