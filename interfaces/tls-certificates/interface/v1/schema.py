@@ -274,7 +274,7 @@ class RequirerData(BaseModel):
     )
 
     certificate_signing_requests: Json[list[CertificateSigningRequest]] = Field(
-        default_factory=list,
+        default_factory=list[CertificateSigningRequest],
         description="The certificate signing requests, as a JSON list.",
         title="Certificate signing requests",
         examples=[json.dumps(CSRS_EXAMPLE)],

@@ -70,7 +70,7 @@ class ProviderUnitData(BaseModel):
             ]
         },
     )
-    __pydantic_extra__: dict[str, Json[CertificateAndKey]]
+    __pydantic_extra__: dict[str, Json[CertificateAndKey]]  # pyright: ignore[reportIncompatibleVariableOverride]
 
     ca: str = Field(
         description="The CA certificate, in PEM format.",
