@@ -196,12 +196,12 @@
     "lib_url": "https://charmhub.io/sdcore-amf-k8s/libraries/fiveg_n2",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/fiveg_n2/",
-    "summary": "",
-    "description": "",
+    "summary": "Connect a 5G radio to the N2 interface of the AMF.",
+    "description": "Within 5G, the Access and Mobility Management Function (AMF) is responsible for managing access and mobility for 5G devices.\nThe 5G radio (gNodeB) communicates with the core's control plane, specifically the AMF, using the N2 interface and the Next Generation Application Protocol (NGAP).\nThe `fiveg_n2` interface allows a gNodeB, or the CU (Central Unit) of a RAN, to get the IP address, hostname, and port of the AMF's N2 interface.",
     "tags": [
       "telco"
     ],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "fiveg_n3",

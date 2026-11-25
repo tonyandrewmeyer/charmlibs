@@ -2,12 +2,21 @@ name: fiveg_n2
 internal: true
 
 version: 0
-status: draft
+status: retired
 lib: charms.sdcore_amf_k8s.fiveg_n2
+summary: Connect a 5G radio to the N2 interface of the AMF.
+description: |
+  Within 5G, the Access and Mobility Management Function (AMF) is responsible for managing access and mobility for 5G devices.
+  The 5G radio (gNodeB) communicates with the core's control plane, specifically the AMF, using the N2 interface and the Next Generation Application Protocol (NGAP).
+  The `fiveg_n2` interface allows a gNodeB, or the CU (Central Unit) of a RAN, to get the IP address, hostname, and port of the AMF's N2 interface.
 
 providers:
-  - name: sdcore-amf-operator
-    url: https://github.com/canonical/sdcore-amf-operator
-requirers: []
+  - name: sdcore-amf-k8s
+    url: https://github.com/canonical/sdcore-amf-k8s-operator
+requirers:
+  - name: sdcore-gnbsim-k8s
+    url: https://github.com/canonical/sdcore-gnbsim-k8s-operator
+  - name: oai-ran-cu-k8s
+    url: https://github.com/canonical/oai-ran-cu-k8s-operator
 
-maintainer: telco
+maintainer: charmlibs-maintainers
