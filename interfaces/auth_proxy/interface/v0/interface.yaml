@@ -1,18 +1,21 @@
 name: auth_proxy
 version: 0
-status: draft
+status: published
 lib: charmlibs.interfaces.auth_proxy
-summary: Configure an Identity and Access Proxy.
+summary: Protect an application with an Identity and Access Proxy.
 description: |
-  The `auth_proxy` interface allows charms to configure an Identity and Access Proxy.
-  The requirer supplies the configuration, such as protected URLs, allowed endpoints, and headers.
-  The provider is responsible for transforming the configuration into access rules and forwarding relevant configuration to the proxy.
+  The `auth_proxy` interface allows a charm to ask an Identity and Access Proxy to require authentication for requests to it.
+  The requirer supplies the URLs to protect, the endpoints that don't need authentication, and the headers to set on authenticated requests.
+  The provider turns these into access rules, and passes the names of the applications to protect to an ingress over the `forward_auth` interface.
 
 providers:
-  - name: oauth2-proxy-k8s-operator
-    url: https://www.github.com/canonical/oauth2-proxy-k8s-operator
+  - name: oauth2-proxy-k8s
+    url: https://github.com/canonical/oauth2-proxy-k8s-operator
+  - name: oathkeeper
+    url: https://github.com/canonical/oathkeeper-operator
 
 requirers:
-  []
+  - name: spark-history-server-k8s
+    url: https://github.com/canonical/spark-history-server-k8s-operator
 
 maintainer: identity

@@ -1,56 +1,26 @@
-# `auth_proxy/v0`
-
-## Usage
-
-This relation interface describes the expected behavior of charms claiming to be able to interact with Policy Decision Point (Oathkeeper), which forms part of Identity and Access Proxy (IAP).
+# auth_proxy
 
 ## Direction
 
-The interface will consist of a provider and a requirer.
-
-The requirer is expected to supply configuration required to set up an Identity and Access Proxy: protected urls, allowed endpoints and headers.
-
-The provider will read the information from the application databag, transform them into access rules and forward relevant configuration to Traefik or other API Gateway. It will not write to the application databag.
-
-```mermaid
-flowchart
-    Requirer -- protected_urls, allowed_endpoints, headers --> Provider
-    Provider ----> Requirer
-```
+The provider is part of an Identity and Access Proxy, and doesn't write to the relation. It turns the requirer's configuration into access rules, and passes the names of the applications to protect to the ingress over the `forward_auth` interface. The ingress then asks the provider whether each request to those applications is allowed.
 
 ## Behavior
 
-Both the requirer and the provider need to adhere to a certain set of criteria to be considered compatible with the interface:
+Keywords are as in RFC 2119.
 
 ### Provider
 
-- Is expected to serve Access Control Decision API
-- Is expected to provide a Policy Decision Point in IAP architecture
-- Is expected to transform incoming `auth_proxy` configuration into access rules, enforcing user authentication for requests hitting the protected urls, with the exception of allowed endpoints.
+- MUST NOT write to either databag.
+- MUST require authentication for requests to the requirer's protected URLs, except for its allowed endpoints.
+- MUST set the requested headers on requests after a successful authentication, if it supports them.
+- If `authenticated_emails` or `authenticated_email_domains` is set and not empty, SHOULD only allow access to users with those email addresses or in those domains.
+- SHOULD ignore data that isn't valid, and SHOULD log an error when it does.
+- MUST stop protecting the requirer when the relation is removed.
 
 ### Requirer
 
-- Is expected to have ingress configured, e.g. with the use of traefik's `ingress-per-app/leader/unit` interface
-- Is expected to provide configuration required to set up access rules: protected urls (externally accessible ingress urls), allowed endpoints and headers.
-
-## Relation Data
-
-[\[Pydantic Schema\]](./schema.py)
-
-### Provider
-
-n/a
-
-### Requirer
-
-#### Example
-
-```json
-{
-  "application_data": {
-    "protected_urls": ["https://10.64.140.43/unit-0", "https://10.64.140.43/unit-1"],
-    "allowed_endpoints": ["about/app"],
-    "headers": ["X-User"]
-  }
-}
-```
+- MUST write to the application databag from the leader unit.
+- MUST have ingress, and MUST set `protected_urls` to its ingress URLs once it has them.
+- MUST only request headers that the provider supports.
+- SHOULD update the databag when its ingress URLs or configuration change.
+- SHOULD clear the application databag when the relation is removed.
