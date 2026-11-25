@@ -431,12 +431,12 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/kafka_client/",
     "summary": "Interact with Kafka clusters as a client.",
-    "description": "The `kafka_client` interface allows charms to interact with Kafka clusters as producers, consumers, or admin clients.\nThe provider charm creates Kafka users with appropriate ACLs and permissions based on requested roles, while the requirer charm specifies its desired topic and role.",
+    "description": "The `kafka_client` interface allows charms to interact with Apache Kafka clusters as producers, consumers, or admin clients.\nThe requirer charm asks for access to a topic with a set of roles, and the provider charm creates a Kafka user with the matching ACLs and shares the credentials and broker addresses.\nProducers can then create their own topics with whichever client library they like, setting any topic-level configuration such as `replication-factor` and `partitions`.",
     "tags": [
       "data",
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "karapace_client",
