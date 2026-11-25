@@ -1,14 +1,25 @@
 name: dns_record
 internal: false
+lib: charms.bind.dns_record
 summary: Create and manage DNS records.
-descriptions: |
+description: |
   The `dns_record` interface allows charms to request the creation of DNS records.
-  The requirer charm specifies the records, and the provider charm is responsible for creating and managing them.
+  The requirer charm specifies the records, and the provider charm is responsible for creating and managing them and reports the status of each request.
+  A provider can also allocate a domain for the requirer that resolves to the requirer's addresses.
 
 version: 0
-status: draft
+status: published
 
-providers: []
-requirers: []
+providers:
+  - name: bind
+    url: https://github.com/canonical/dns-operators
+  - name: dns-policy
+    url: https://github.com/canonical/dns-operators
+
+requirers:
+  - name: dns-integrator
+    url: https://github.com/canonical/dns-operators
+  - name: dns-policy
+    url: https://github.com/canonical/dns-operators
 
 maintainer: platform-engineering

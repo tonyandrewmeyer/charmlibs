@@ -113,14 +113,14 @@
   {
     "name": "dns_record",
     "version": "0",
-    "lib": "",
+    "lib": "charms.bind.dns_record",
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/dns_record/",
     "summary": "Create and manage DNS records.",
-    "description": "",
+    "description": "The `dns_record` interface allows charms to request the creation of DNS records.\nThe requirer charm specifies the records, and the provider charm is responsible for creating and managing them and reports the status of each request.\nA provider can also allocate a domain for the requirer that resolves to the requirer's addresses.",
     "tags": [],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "etcd_client",

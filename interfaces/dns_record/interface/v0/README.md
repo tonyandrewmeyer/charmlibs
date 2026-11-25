@@ -1,81 +1,26 @@
-# `dns_record/v0`
-
-## Usage
-
-This relation interface describes the expected behavior of any charm claiming to be able to interface with a DNS record Provider.
-
-## Direction
-
-The `dns_record` interface implements a provider/requirer pattern. The requirer is a charm that wishes to create a set of DNS records, and the provider is the charm managing those.
-```mermaid
-flowchart TD
-  Requirer -- dns_entries --> Provider
-  Provider -- dns_entries --> Requirer
-```
+# dns_record
 
 ## Behavior
 
-The following is the criteria that a Provider and Requirer need to adhere to be compatible with this interface.
+Keywords are as in RFC 2119.
 
 ### Provider
 
-- Is expected to provide a list of `dns_entries` in the relation databag, each containing the domain, the status and optionally the description corresponding to the `dns_entries` requirested by the requirer.
+- MUST write the statuses to the application databag from the leader unit.
+- MUST ignore requested entries that don't have a `uuid`.
+- MUST report the status of each request under the `uuid` that the requirer gave it.
+- MUST update the statuses when the requested entries, or the outcome of processing them, change.
+- MUST stop serving a record when the requirer removes its entry from `dns_entries`.
+- MAY reject a request that the requirer isn't allowed to make, with the `permission_denied` status.
+- MAY reject requests that are for the same domain, host label, record class and record type as another request, with the `conflict` status.
+- MAY allocate a domain for the requirer and publish it in `ddns-domain`. If it does, it MUST point the domain at the addresses in the requirer's `ddns-addresses` if they are set, and at the `ingress-address` of the requirer's units otherwise, and it MUST remove `ddns-domain` when it stops allocating domains.
+- If it allocates domains, SHOULD reject requests for `A`, `AAAA` and `CNAME` records in the allocated domains, with the `permission_denied` status.
 
 ### Requirer
 
-- Is expected to provide a list of `dns_entries` in the relation databag, containing at least the `dns-domain`, the `host-label` and `record-data`. The `dns-domain` must be present in the list of `dns_domains` for authentication.
-
-
-## Relation Data
-
-[\[Pydantic Schema\]](./schema.py)
-
-### Provider
-
-Provider provides the result of the requirer request. It should be placed in the application databag.
-
-#### Example
-```json
-  "application-data": {
-    "dns_entries": [
-      {
-        "uuid": "550e8400-e29b-41d4-a716-446655440002",
-        "status": "invalid_credentials",
-        "description": "invalid_credentials"
-      },
-      {
-        "uuid": "550e8400-e29b-41d4-a716-446655440003",
-        "status": "approved"
-      }
-    ]
-  }
-
-```
-
-### Requirer
-
-Requirer request the details of one or more DNS records. It should be placed in the application databag.
-
-#### Example
-
-```json
-  "application-data": {
-    "dns_entries": [
-      {
-        "uuid": "550e8400-e29b-41d4-a716-446655440002",
-        "domain": "cloud.canonical.com",
-        "host_label": "admin",
-        "ttl": 600,
-        "record_class": "IN",
-        "record_type": "A",
-        "record_data": "91.189.91.48"
-      },
-      {
-        "uuid": "550e8400-e29b-41d4-a716-446655440003",
-        "domain": "staging.canonical.com",
-        "host_label": "www",
-        "record_data": "91.189.91.47"
-      }
-    ]
-  }
-```
+- MUST write the requested entries to the application databag from the leader unit.
+- MUST give each entry a `uuid` that is unique within the relation, and SHOULD keep it the same for as long as the entry is unchanged.
+- MUST set `ttl` and `record_type` on each entry, as providers ignore entries without them.
+- MUST publish the complete list of entries it wants each time it updates `dns_entries`; leaving an entry out withdraws the request.
+- SHOULD ignore statuses for UUIDs that it didn't request.
+- MAY set `ddns-addresses` when the `ingress-address` of its units isn't publicly reachable, for example because it's behind a NAT.
