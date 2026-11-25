@@ -7,7 +7,8 @@ Keywords are as in RFC 2119.
 ### Provider
 
 - MUST write to the application databag from the leader unit.
-- MUST create a user for each relation once the requirer has written `database`, with the ACL permissions in `extra-user-roles` (or `cdrwa`) on that zNode, and MUST set up the ACLs before writing the credentials.
+- MUST create a user for each relation once the requirer has written `database`, with the ACL permissions in `extra-user-roles` on that zNode. If the requirer doesn't write `extra-user-roles`, the user gets `cdrwa`.
+- MUST set up the ACLs before writing the credentials.
 - SHOULD accept `chroot` as an older name for `database`, and MAY write `chroot` as a copy of `database` for older requirers.
 - MAY give the requirer a different zNode from the one it asked for.
 - If the requirer lists the credentials in `requested-secrets`, MUST put `username`, `password`, and `uris` in a Juju secret, write the secret's ID to `secret-user`, and grant the secret to the relation. Otherwise, MAY write them in plain text, for requirers that don't support secrets.
