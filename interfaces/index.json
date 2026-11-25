@@ -105,7 +105,7 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/database_backup/",
     "summary": "Manage database backup and restore operations.",
-    "description": "The `database_backup` interface allows a database backup manager charm to coordinate backup and restore operations with database charms.\nThe provider charm (database) executes backup and restore jobs based on requirer requests and reports their status, while the requirer charm (backup manager) requests jobs, manages storage configuration, and stores backup artifacts.",
+    "description": "The `database_backup` interface allows a database backup manager charm to coordinate backup and restore operations with database charms.\nThe requirer charm (the backup manager) requests backup and restore jobs, with the storage to use for each, and the provider charm (the database) runs them and reports their status.\nThe Juju admin triggers a backup or restore with an action on the backup manager, and will eventually be able to schedule periodic backups there.",
     "tags": [],
     "status": "draft"
   },
