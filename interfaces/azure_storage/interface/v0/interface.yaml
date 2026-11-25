@@ -1,21 +1,26 @@
 name: azure_storage
 version: 0
-status: draft
-
+status: published
+lib: object-storage-charmlib
 summary: Access Azure Blob Storage and Data Lake Storage (Gen 2).
 description: |
   The `azure_storage` interface allows charms to access Azure Blob Storage and Data Lake Storage (Gen 2) with appropriate credentials and connection details.
-  The provider charm supplies storage account credentials and configuration, while the requirer charm specifies the container to access.
+  The provider charm supplies the storage account, container, connection details, and a Juju secret that contains the storage account key, while the requirer charm can request the container to use.
 
 providers:
   - name: azure-storage-integrator
-    url: https://github.com/canonical/object-storage-integrators
+    url: https://github.com/canonical/object-storage-integrator/tree/main/azure_storage
 
 requirers:
   - name: spark-integration-hub-k8s
     url: https://github.com/canonical/spark-integration-hub-k8s-operator
-
   - name: spark-history-server-k8s
     url: https://github.com/canonical/spark-history-server-k8s-operator
+  - name: velero-operator
+    url: https://github.com/canonical/velero-operator
+  - name: cassandra
+    url: https://github.com/canonical/cassandra-operator
+  - name: valkey
+    url: https://github.com/canonical/valkey-operator
 
-maintainer: data-platform
+maintainer: data

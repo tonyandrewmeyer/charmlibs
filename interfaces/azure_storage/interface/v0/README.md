@@ -1,60 +1,24 @@
-# `azure_storage/v0`
+# azure_storage
 
-## Usage
+## Behavior
 
-This relation interface describes the expected behaviour of any charm claiming to be able to interact with Azure Storage protocol.
-This relation interface should be used for both Azure Blob Storage and Azure Data Lake Storage (Gen 2). This interface will be accomplished using the provider library, although charm developers are free to provide alternative libraries as long as they fulfil the behavioural and schematic requirements described in this document.
-
-## Direction
-
-```mermaid
-flowchart TD
-    Provider -- container, storage-account, secret-key, connection-protocol, endpoint, path --> Requirer
-```
-
-As with all Juju relations, the `azure_storage` interface consists of two parties: a Provider (object storage charm) and a Requirer (application charm). The Provider will be expected to provide new unique credentials (along with `storage-account`, `container`, `connection-protocol` and other fields), which can be used to access the actual object storage.
-
-## Behaviour
-
-Requirer and Provider must adhere to the following criteria to be considered compatible with this interface.
-
-### Provider
-The provider is expected to share with requirers all the credentials and configurations as per the schema for a requirer to be able to connect to an Azure Storage container. As of now, the container **may not** be automatically created when the relation is joined.
-
-### Requirer
-- Is expected to share the name of the container that is to be used. The provider may ignore the `container` field shared in some cases (e.g. Azure Storage Integrator) and thus the requirer should instead use the container name received in relation data.
-- Is expected to allow multiple different Juju applications to access the same container name.
-- Is expected to have unique credentials for each relation. Therefore, different instances of the same charm (juju applications) will have different relations with different credentials.
-- Is expected to have different relations names on Requirer with the same interface name if Requirer needs access to multiple buckets.
-
-## Relation Data
-
-[\[Pydantic Schema\]](./schema.py)
+Keywords are as in RFC 2119.
 
 ### Provider
 
-
-The Provider shares the data necessary to connect to Azure Storage in the **application** databag.
-
-
-#### Example
-```yaml
-  application-data:
-    container: test-container
-    storage-account: test-storage-account
-    connection-protocol: abfss
-    secret-key: RANDOM
-    path: spark-events/
-    endpoint: abfss://test-container@test-storage-account.dfs.core.windows.net/
-```
+- MUST write `version` (currently `1`) to the application databag when the relation is created, and MUST NOT write anything else until the requirer has written `version` or `container`.
+- MUST write the connection details, including `container`, `storage-account`, and `connection-protocol`, to the application databag from the leader unit.
+- If the requirer lists `secret-key` in `requested-secrets`, MUST put the storage account key in a Juju secret, under the `secret-key` key, write the secret's ID to `secret-extra`, and grant the secret to the relation. Otherwise, MAY write the key to `secret-key` in plain text, for requirers that don't support secrets.
+- MAY ignore the `container` that the requirer asks for, and provide a different one.
+- MAY expect the container to exist already, rather than creating it when the relation is joined.
+- MUST update the databag, or the secret's content, when the connection details or the key change.
 
 ### Requirer
 
-Requirer shares the container name in the **application** databag.
-
-#### Example
-
-```yaml
-  application-data:
-    container: test-container
-```
+- MUST write `version` (currently `1`) to the application databag from the leader unit when the relation is joined.
+- MAY write `container` to ask for a specific container. If the provider has written data without `version` (an older provider), MUST write `container`, using `relation-<relation ID>` if it has no name to ask for.
+- SHOULD list `secret-key` in `requested-secrets`.
+- MUST use the container in the provider's databag, which might not be the one it asked for.
+- SHOULD treat the relation as not ready until `container`, `storage-account`, `connection-protocol`, and the storage account key are all available.
+- MUST allow other applications to use the same container.
+- MUST use a different endpoint for each container that it needs. Credentials belong to a relation, so different applications of the same charm can have different credentials.

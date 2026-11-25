@@ -28,14 +28,16 @@
   {
     "name": "azure_storage",
     "version": "0",
-    "lib": "",
-    "lib_url": "",
-    "lib_docs_url": "",
+    "lib": "object-storage-charmlib",
+    "lib_url": "https://pypi.org/project/object-storage-charmlib",
+    "lib_docs_url": "https://github.com/canonical/object-storage-integrator/blob/main/lib/README.md",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/azure_storage/",
     "summary": "Access Azure Blob Storage and Data Lake Storage (Gen 2).",
-    "description": "The `azure_storage` interface allows charms to access Azure Blob Storage and Data Lake Storage (Gen 2) with appropriate credentials and connection details.\nThe provider charm supplies storage account credentials and configuration, while the requirer charm specifies the container to access.",
-    "tags": [],
-    "status": "draft"
+    "description": "The `azure_storage` interface allows charms to access Azure Blob Storage and Data Lake Storage (Gen 2) with appropriate credentials and connection details.\nThe provider charm supplies the storage account, container, connection details, and a Juju secret that contains the storage account key, while the requirer charm can request the container to use.",
+    "tags": [
+      "data"
+    ],
+    "status": "published"
   },
   {
     "name": "certificate_transfer",
