@@ -4,9 +4,9 @@ status: published
 lib: charms.prometheus_k8s.prometheus_scrape
 summary: Configure Prometheus scraping jobs.
 description: |
-  The `prometheus_scrape` interface supports configuring Prometheus scrape jobs and recording and alerting rules.
-  The provider specifies one or more scrape compatible metrics endpoints, and rule files.
-  The requirer then scrapes the provider's metrics and emits alerts per rule files.
+  The `prometheus_scrape` interface supports configuring Prometheus scrape jobs and alerting and recording rules.
+  The provider publishes scrape jobs for its metrics endpoints, the address of each of its units, and its rules.
+  The requirer scrapes the provider's metrics, evaluates the rules, and reports any jobs or rules that it can't use.
 
 providers:
   - name: prometheus-k8s
@@ -27,7 +27,9 @@ providers:
 requirers:
   - name: prometheus-k8s
     url: https://www.github.com/canonical/prometheus-k8s-operator
+  - name: opentelemetry-collector-k8s
+    url: https://github.com/canonical/opentelemetry-collector-k8s-operator
   - name: grafana-agent-k8s
     url: https://www.github.com/canonical/grafana-agent-k8s-operator
 
-maintainer: observability
+maintainer: observability-core

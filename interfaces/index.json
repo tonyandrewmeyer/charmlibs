@@ -708,7 +708,7 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/prometheus_scrape/",
     "summary": "Configure Prometheus scraping jobs.",
-    "description": "The `prometheus_scrape` interface supports configuring Prometheus scrape jobs and recording and alerting rules.\nThe provider specifies one or more scrape compatible metrics endpoints, and rule files.\nThe requirer then scrapes the provider's metrics and emits alerts per rule files.",
+    "description": "The `prometheus_scrape` interface supports configuring Prometheus scrape jobs and alerting and recording rules.\nThe provider publishes scrape jobs for its metrics endpoints, the address of each of its units, and its rules.\nThe requirer scrapes the provider's metrics, evaluates the rules, and reports any jobs or rules that it can't use.",
     "tags": [
       "observability"
     ],
