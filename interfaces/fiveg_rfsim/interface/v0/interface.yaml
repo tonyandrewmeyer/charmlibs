@@ -1,7 +1,15 @@
 name: fiveg_rfsim
 internal: true
+
 version: 0
-status: draft
+status: retired
+lib: charms.oai_ran_du_k8s.fiveg_rfsim
+summary: Connect a simulated 5G UE to the RF simulator of a DU.
+description: |
+  Within 5G RAN (Radio Access Network) architecture, the OAI DU charm can act as both the DU and the RU through its RF simulator.
+  The `fiveg_rfsim` interface allows a simulated UE, such as the OAI UE charm, to get the RF simulator's address and the network slice and radio settings that it needs to connect.
+  The provider of this interface would be the OAI DU charm, and the requirer would be the OAI UE charm.
+  The charms that used this interface have replaced it with `fiveg_rf_config`.
 
 providers:
   - name: oai-ran-du-k8s
@@ -11,4 +19,4 @@ requirers:
   - name: oai-ran-ue-k8s
     url: https://github.com/canonical/oai-ran-ue-k8s-operator
 
-maintainer: telco
+maintainer: charmlibs-maintainers
