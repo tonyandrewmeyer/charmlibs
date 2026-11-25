@@ -2,9 +2,17 @@ name: fiveg_n3
 internal: true
 
 version: 0
-status: draft
+status: retired
+lib: charms.sdcore_upf_k8s.fiveg_n3
+summary: Get the IP address of a 5G UPF for the N3 interface.
+description: |
+  Within 5G, the User Plane Function (UPF) supports features and capabilities to facilitate user plane operation, such as packet routing and forwarding, interconnection to the Data Network, policy enforcement, and data buffering.
+  The `fiveg_n3` interface allows a charm to get the UPF's IP address, so that it can communicate with the UPF over the N3 interface.
+  In a typical 5G network, the requirer of this interface would be a gNodeB (a 5G base station).
 
-providers: []
+providers:
+  - name: sdcore-upf-k8s
+    url: https://github.com/canonical/sdcore-upf-k8s-operator
 requirers: []
 
-maintainer: telco
+maintainer: charmlibs-maintainers

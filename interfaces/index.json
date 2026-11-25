@@ -206,14 +206,14 @@
   {
     "name": "fiveg_n3",
     "version": "0",
-    "lib": "",
+    "lib": "charms.sdcore_upf_k8s.fiveg_n3",
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/fiveg_n3/",
-    "summary": "",
-    "description": "",
+    "summary": "Get the IP address of a 5G UPF for the N3 interface.",
+    "description": "Within 5G, the User Plane Function (UPF) supports features and capabilities to facilitate user plane operation, such as packet routing and forwarding, interconnection to the Data Network, policy enforcement, and data buffering.\nThe `fiveg_n3` interface allows a charm to get the UPF's IP address, so that it can communicate with the UPF over the N3 interface.\nIn a typical 5G network, the requirer of this interface would be a gNodeB (a 5G base station).",
     "tags": [],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "fiveg_n4",
