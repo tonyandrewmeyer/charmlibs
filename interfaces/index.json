@@ -880,11 +880,11 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/vault-kv/",
     "summary": "Securely share Vault credentials to interact with the Vault Key-Value (KV) backend.",
-    "description": "The `vault-kv` interface allows the charms to securely request and receive the credentials needed to interact with the Key-Value (KV) backend of Vault.\nThe requirer charm requests credentials, and the provider charm supplies them.",
+    "description": "The `vault-kv` interface allows charms to securely request and receive the credentials needed to interact with the Key-Value (KV) backend of Vault.\nThe requirer charm requests a KV mount and credentials for each unit, and the provider charm creates them and shares them, with the credentials in Juju secrets.",
     "tags": [
       "security"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "velero_backup_config",
