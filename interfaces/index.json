@@ -717,14 +717,17 @@
   {
     "name": "pyroscope_cluster",
     "version": "0",
-    "lib": "",
-    "lib_url": "",
+    "lib": "coordinated-workers",
+    "lib_url": "https://pypi.org/project/coordinated-workers/",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/pyroscope_cluster/",
     "summary": "Pyroscope coordinator and worker charm communication.",
-    "description": "The `pyroscope_cluster` interface supports communication between the [pyroscope-coordinator-k8s](https://charmhub.io/pyroscope-coordinator-k8s) and [pyroscope-worker-k8s](https://charmhub.io/pyroscope-worker-k8s) charms.",
-    "tags": [],
-    "status": "draft"
+    "description": "The `pyroscope_cluster` interface supports communication between the [pyroscope-coordinator-k8s](https://charmhub.io/pyroscope-coordinator-k8s) and [pyroscope-worker-k8s](https://charmhub.io/pyroscope-worker-k8s) charms in a distributed Pyroscope deployment.\nEach worker application publishes its role, and each worker unit its address and topology, so that they can join the cluster.\nThe coordinator replies with the Pyroscope configuration that the workers must run with, and other configuration for the worker charm.",
+    "tags": [
+      "internal",
+      "observability"
+    ],
+    "status": "published"
   },
   {
     "name": "s3",
@@ -811,13 +814,16 @@
   {
     "name": "tempo_cluster",
     "version": "1",
-    "lib": "",
-    "lib_url": "",
+    "lib": "coordinated-workers",
+    "lib_url": "https://pypi.org/project/coordinated-workers/",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/tempo_cluster/",
     "summary": "Tempo coordinator and worker charm communication.",
-    "description": "The `tempo_cluster` interface supports communication between the [tempo-coordinator-k8s](https://charmhub.io/tempo-coordinator-k8s) and [tempo-worker-k8s](https://charmhub.io/tempo-worker-k8s) charms.",
-    "tags": [],
+    "description": "The `tempo_cluster` interface supports communication between the [tempo-coordinator-k8s](https://charmhub.io/tempo-coordinator-k8s) and [tempo-worker-k8s](https://charmhub.io/tempo-worker-k8s) charms in a distributed Tempo deployment.\nEach worker application publishes its role, and each worker unit its address and topology, so that they can join the cluster.\nThe coordinator replies with the Tempo configuration that the workers must run with, and other configuration for the worker charm.",
+    "tags": [
+      "internal",
+      "observability"
+    ],
     "status": "published"
   },
   {
