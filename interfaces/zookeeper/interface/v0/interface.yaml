@@ -1,6 +1,11 @@
 name: zookeeper
 version: 0
-status: draft
+status: published
+lib: charms.data_platform_libs.data_interfaces
+summary: Connect to an Apache ZooKeeper cluster.
+description: |
+  The `zookeeper` interface allows charms to connect to an Apache ZooKeeper cluster with credentials of their own.
+  The requirer charm asks for a zNode, and the provider charm creates a user with access to that zNode and shares the credentials and server addresses.
 
 providers:
   - name: zookeeper
@@ -10,10 +15,12 @@ providers:
 
 requirers:
   - name: kafka
-    url: https://github.com/canonical/kafka-operator
+    url: https://github.com/canonical/kafka-operator/tree/3/stable
   - name: kafka-k8s
     url: https://github.com/canonical/kafka-k8s-operator
-  - name: kyuubi-k8s-operator
+  - name: kyuubi-k8s
     url: https://github.com/canonical/kyuubi-k8s-operator
+  - name: data-integrator
+    url: https://github.com/canonical/data-integrator
 
 maintainer: data-bigdata

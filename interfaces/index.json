@@ -918,13 +918,16 @@
   {
     "name": "zookeeper",
     "version": "0",
-    "lib": "",
-    "lib_url": "",
+    "lib": "charms.data_platform_libs.data_interfaces",
+    "lib_url": "https://charmhub.io/data-platform-libs/libraries/data_interfaces",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/zookeeper/",
-    "summary": "",
-    "description": "",
-    "tags": [],
-    "status": "draft"
+    "summary": "Connect to an Apache ZooKeeper cluster.",
+    "description": "The `zookeeper` interface allows charms to connect to an Apache ZooKeeper cluster with credentials of their own.\nThe requirer charm asks for a zNode, and the provider charm creates a user with access to that zNode and shares the credentials and server addresses.",
+    "tags": [
+      "data",
+      "identity-auth"
+    ],
+    "status": "published"
   }
 ]
