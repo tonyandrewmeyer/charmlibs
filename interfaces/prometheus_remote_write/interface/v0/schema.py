@@ -103,6 +103,16 @@ class AlertRuleGroup(BaseModel):
     )
     rules: list[AlertRule] = Field(
         description='The rules in the group.',
+        examples=[
+            [
+                {
+                    'alert': 'ConsumerCharmUnavailable',
+                    'expr': 'up < 1',
+                    'for': '0m',
+                    'labels': {'severity': 'critical'},
+                }
+            ]
+        ],
     )
 
 
@@ -114,6 +124,21 @@ class AlertRules(BaseModel):
     groups: list[AlertRuleGroup] = Field(
         default_factory=list,
         description='The rule groups. Absent when the requirer has no rules.',
+        examples=[
+            [
+                {
+                    'name': 'some-model_00000000-0000-0000-0000-000000000000_consumer-charm_alerts',
+                    'rules': [
+                        {
+                            'alert': 'ConsumerCharmUnavailable',
+                            'expr': 'up < 1',
+                            'for': '0m',
+                            'labels': {'severity': 'critical'},
+                        }
+                    ],
+                }
+            ]
+        ],
     )
 
 
