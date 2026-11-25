@@ -390,9 +390,9 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/jwt/",
     "summary": "Provide and consume JSON Web Token configuration.",
-    "description": "The `jwt` interface allows charms to provide or require JSON Web Token configuration for secure token validation.\nThe provider charm supplies signing keys and optional validation parameters, while the requirer charm applies these settings to validate incoming JWTs in its workload.",
+    "description": "The `jwt` interface allows charms to provide or require the configuration for validating self-contained JSON Web Tokens (JWTs).\nSelf-contained JWTs include everything needed to validate them, so an API can verify them without making external calls: it takes the key information from the JWT header and passes it to a JWT validation library.\nThe provider charm supplies a Juju secret with the signing keys and the validation settings, and the requirer charm applies them to validate incoming JWTs in its workload.",
     "tags": [],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "k8s-service",

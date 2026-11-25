@@ -1,17 +1,20 @@
 name: jwt
 version: 0
-status: draft
+status: published
 summary: Provide and consume JSON Web Token configuration.
 description: |
-  The `jwt` interface allows charms to provide or require JSON Web Token configuration for secure token validation.
-  The provider charm supplies signing keys and optional validation parameters, while the requirer charm applies these settings to validate incoming JWTs in its workload.
+  The `jwt` interface allows charms to provide or require the configuration for validating self-contained JSON Web Tokens (JWTs).
+  Self-contained JWTs include everything needed to validate them, so an API can verify them without making external calls: it takes the key information from the JWT header and passes it to a JWT validation library.
+  The provider charm supplies a Juju secret with the signing keys and the validation settings, and the requirer charm applies them to validate incoming JWTs in its workload.
 
 providers:
   - name: jwt-integrator
-    url: https://www.github.com/canonical/jwt-integrator
+    url: https://github.com/canonical/jwt-integrator
 
 requirers:
-  - name: opensearch-operator
-    url: https://www.github.com/canonical/opensearch-operator
+  - name: opensearch
+    url: https://github.com/canonical/opensearch-operator/tree/main/machine
+  - name: opensearch-k8s
+    url: https://github.com/canonical/opensearch-operator/tree/main/kubernetes
 
-maintainer: data-platform
+maintainer: data
