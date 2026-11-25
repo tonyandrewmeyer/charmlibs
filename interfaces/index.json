@@ -867,10 +867,10 @@
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/vault-autounseal/",
-    "summary": "",
-    "description": "",
+    "summary": "Auto-unseal a Vault with another Vault's transit backend.",
+    "description": "The `vault-autounseal` interface allows a Vault charm to auto-unseal using the transit backend of another Vault.\nThe provider charm creates an encryption key and AppRole credentials for the requirer, and shares them, with the credentials in a Juju secret.\nThe requirer configures its Vault to use them to unseal.",
     "tags": [],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "vault-kv",
