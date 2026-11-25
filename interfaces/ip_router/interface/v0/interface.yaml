@@ -1,8 +1,14 @@
 name: ip_router
 version: 0
-status: draft
+status: retired
+lib: charms.ip_router_interface.ip_router_interface
+summary: Request networks and routes from a router, and share them with other charms.
+description: |
+  The `ip_router` interface allows charms to request IP networks and routes from a router, and to learn about the networks that other charms have requested.
+  Each requirer provides the networks that it needs, each with a gateway and optional routes.
+  The provider (the router) combines the requests from every requirer into a single routing table, and provides that table to every requirer.
 
 providers: []
 requirers: []
 
-maintainer: telco
+maintainer: charmlibs-maintainers

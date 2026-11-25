@@ -360,14 +360,14 @@
   {
     "name": "ip_router",
     "version": "0",
-    "lib": "",
+    "lib": "charms.ip_router_interface.ip_router_interface",
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/ip_router/",
-    "summary": "",
-    "description": "",
+    "summary": "Request networks and routes from a router, and share them with other charms.",
+    "description": "The `ip_router` interface allows charms to request IP networks and routes from a router, and to learn about the networks that other charms have requested.\nEach requirer provides the networks that it needs, each with a gateway and optional routes.\nThe provider (the router) combines the requests from every requirer into a single routing table, and provides that table to every requirer.",
     "tags": [],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "istio_metadata",
