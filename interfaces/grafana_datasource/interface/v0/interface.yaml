@@ -3,19 +3,24 @@ internal: true
 version: 0
 status: published
 lib: charms.grafana_k8s.grafana_source
-summary: Provide Grafana data source servers.
+summary: Provide Grafana datasources.
 description: |
-  The `grafana_source` interface supports exposing servers implementing the Grafana source HTTP API.
-  The provider publishes the endpoint URL for the servers, one per unit.
-  The requirer replies with unique IDs for the Grafana application and a mapping of unique IDs for the units.
+  The `grafana_datasource` interface supports adding servers that Grafana can query as datasources, such as Prometheus, Loki, or Tempo.
+  The provider publishes the type of the datasource, and the URL of each unit's server, a single URL for the whole application, or both.
+  The requirer adds the datasources to Grafana, and replies with a unique ID for the Grafana application and the UIDs of the datasources, which the provider can share with other charms for correlation.
 
 providers:
+  - name: prometheus-k8s
+    url: https://github.com/canonical/prometheus-k8s-operator
+  - name: loki-k8s
+    url: https://github.com/canonical/loki-k8s-operator
   - name: tempo-coordinator-k8s
-    url: https://github.com/canonical/tempo-coordinator-k8s-operator
+    url: https://github.com/canonical/tempo-operators
+  - name: mimir-coordinator-k8s
+    url: https://github.com/canonical/mimir-operators
 
 requirers:
   - name: grafana-k8s
     url: https://github.com/canonical/grafana-k8s-operator
-
 
 maintainer: observability

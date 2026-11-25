@@ -291,8 +291,8 @@
     "lib_url": "https://charmhub.io/grafana-k8s/libraries/grafana_source",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/grafana_datasource/",
-    "summary": "Provide Grafana data source servers.",
-    "description": "The `grafana_source` interface supports exposing servers implementing the Grafana source HTTP API.\nThe provider publishes the endpoint URL for the servers, one per unit.\nThe requirer replies with unique IDs for the Grafana application and a mapping of unique IDs for the units.",
+    "summary": "Provide Grafana datasources.",
+    "description": "The `grafana_datasource` interface supports adding servers that Grafana can query as datasources, such as Prometheus, Loki, or Tempo.\nThe provider publishes the type of the datasource, and the URL of each unit's server, a single URL for the whole application, or both.\nThe requirer adds the datasources to Grafana, and replies with a unique ID for the Grafana application and the UIDs of the datasources, which the provider can share with other charms for correlation.",
     "tags": [
       "observability"
     ],
