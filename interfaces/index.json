@@ -848,7 +848,7 @@
     "lib_docs_url": "https://canonical.com/juju/docs/charmlibs/reference/charmlibs/interfaces/tracing",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/tracing/",
     "summary": "Request endpoints for pushing trace data.",
-    "description": "The `tracing` interface supports push-based tracing.\nThe requirer publishes the list of protocols it wants to use to send traces.\nThe provider replies with an API URL and an endpoint for each protocol, omitting those it does not support.",
+    "description": "The `tracing` interface supports push-based tracing.\nThe requirer publishes the list of protocols it wants to use to send traces.\nThe provider replies with an endpoint for each requested protocol that it supports, omitting those it does not support.",
     "tags": [
       "observability"
     ],
