@@ -1,15 +1,17 @@
 name: tempo_cluster
 internal: true
 version: 0
-status: draft
+status: retired
+lib: cosl
+summary: Tempo coordinator and worker charm communication.
+description: |
+  The `tempo_cluster` interface supports communication between the [tempo-coordinator-k8s](https://charmhub.io/tempo-coordinator-k8s) and [tempo-worker-k8s](https://charmhub.io/tempo-worker-k8s) charms in a distributed Tempo deployment.
+  Each worker application publishes its role, and each worker unit its address and topology, so that they can join the cluster.
+  The coordinator replies with the Tempo configuration that the workers must run with.
+  This version has a single `tracing_receivers` mapping. The charms switched to v1, which splits it into charm and workload receivers, in November 2024.
 
-providers:
-  - name: tempo-coordinator-k8s
-    url: https://github.com/canonical/tempo-coordinator-k8s-operator
+providers: []
 
-requirers:
-  - name: tempo-worker-k8s
-    url: https://github.com/canonical/tempo-worker-k8s-operator
+requirers: []
 
-maintainer: observability
-
+maintainer: tracing-and-profiling
