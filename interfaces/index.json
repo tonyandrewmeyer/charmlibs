@@ -16,17 +16,14 @@
   {
     "name": "azure_service_principal",
     "version": "0",
-    "lib": "charms.data_platform_libs.data_interfaces",
-    "lib_url": "https://charmhub.io/data-platform-libs/libraries/data_interfaces",
+    "lib": "charms.azure_auth_integrator.azure_service_principal",
+    "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/azure_service_principal/",
-    "summary": "Interact with Microsoft Entra ID using service principal credentials.",
-    "description": "The `azure_service_principal` interface allows charms to receive the service principal credential needed to access Entra ID objects such as Azure storage.\nRequirer charms can specify which fields should be transferred as Juju secrets, and the provider charm will deliver the credentials as requested.",
-    "tags": [
-      "data",
-      "identity-auth"
-    ],
-    "status": "draft"
+    "summary": "Get Microsoft Entra ID service principal credentials.",
+    "description": "The `azure_service_principal` interface allows charms to get the service principal credentials that they need to access Microsoft Entra ID objects, such as Azure storage.\nThe provider charm supplies the subscription and tenant IDs, and a Juju secret that contains the client ID and client secret.",
+    "tags": [],
+    "status": "published"
   },
   {
     "name": "azure_storage",

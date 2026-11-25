@@ -1,11 +1,11 @@
 name: azure_service_principal
 version: 0
-status: draft
-lib: charms.data_platform_libs.data_interfaces
-summary: Interact with Microsoft Entra ID using service principal credentials.
+status: published
+lib: charms.azure_auth_integrator.azure_service_principal
+summary: Get Microsoft Entra ID service principal credentials.
 description: |
-  The `azure_service_principal` interface allows charms to receive the service principal credential needed to access Entra ID objects such as Azure storage.
-  Requirer charms can specify which fields should be transferred as Juju secrets, and the provider charm will deliver the credentials as requested.
+  The `azure_service_principal` interface allows charms to get the service principal credentials that they need to access Microsoft Entra ID objects, such as Azure storage.
+  The provider charm supplies the subscription and tenant IDs, and a Juju secret that contains the client ID and client secret.
 
 providers:
   - name: azure-auth-integrator
@@ -15,4 +15,4 @@ requirers:
   - name: velero-operator
     url: https://github.com/canonical/velero-operator
 
-maintainer: data-platform
+maintainer: data

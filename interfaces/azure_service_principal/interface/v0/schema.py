@@ -23,7 +23,19 @@ class _BareStringDatabag(BaseModel):
 class ProviderAppData(_BareStringDatabag):
     """Credentials for an Azure Service Principal."""
 
-    model_config = ConfigDict(strict=True, populate_by_name=True)
+    model_config = ConfigDict(
+        strict=True,
+        populate_by_name=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "subscription-id": "12345678-1234-1234-1234-1234567890ab",
+                    "tenant-id": "87654321-4321-4321-4321-ba0987654321",
+                    "secret-extra": "secret://91f805c5-5b49-47a3-8e7b-70befa766caf/d40rbhnmp25c76d6bdn0",
+                },
+            ]
+        },
+    )
 
     subscription_id: str | None = Field(
         default=None,
@@ -45,8 +57,8 @@ class ProviderAppData(_BareStringDatabag):
         default=None,
         alias="secret-extra",
         description=(
-            "A Juju Secret ID that points to a secret containing client-id (the Application ID"
-            " for the service principal) and client-secret (used for authentication)."
+            "A Juju secret ID that points to a secret containing client-id (the application ID"
+            " of the service principal) and client-secret (used for authentication)."
         ),
         examples=["secret://91f805c5-5b49-47a3-8e7b-70befa766caf/d40rbhnmp25c76d6bdn0"],
         title="Credentials Secret ID",
@@ -60,6 +72,27 @@ class RequirerAppData(ProviderAppData):
     older data_interfaces v0 based library (such as velero-operator) write requested-secrets and
     provided-secrets instead. The provider reads neither.
     """
+
+    model_config = ConfigDict(
+        strict=True,
+        populate_by_name=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "subscription-id": "12345678-1234-1234-1234-1234567890ab",
+                    "tenant-id": "87654321-4321-4321-4321-ba0987654321",
+                    "secret-extra": "secret://91f805c5-5b49-47a3-8e7b-70befa766caf/d40rbhnmp25c76d6bdn0",
+                },
+                {
+                    "requested-secrets": '["client-id", "client-secret"]',
+                    "provided-secrets": (
+                        '["username", "password", "uris", "read-only-uris", "tls", "tls-ca",'
+                        ' "mtls-cert", "entity-name", "entity-password"]'
+                    ),
+                },
+            ]
+        },
+    )
 
     requested_secrets: list[str] | None = Field(
         default=None,
@@ -94,7 +127,26 @@ class RequirerAppData(ProviderAppData):
 class RequirerUnitData(_BareStringDatabag):
     """The requirer's unit databag, written by the older data_interfaces v0 based library for its own use."""
 
-    model_config = ConfigDict(strict=True, populate_by_name=True)
+    model_config = ConfigDict(
+        strict=True,
+        populate_by_name=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "requested-secrets": '["client-id", "client-secret"]',
+                    "provided-secrets": (
+                        '["username", "password", "uris", "read-only-uris", "tls", "tls-ca",'
+                        ' "mtls-cert", "entity-name", "entity-password"]'
+                    ),
+                    "data": (
+                        '{"subscription-id": "12345678-1234-1234-1234-1234567890ab",'
+                        ' "tenant-id": "87654321-4321-4321-4321-ba0987654321",'
+                        ' "secret-extra": "secret://91f805c5-5b49-47a3-8e7b-70befa766caf/d40rbhnmp25c76d6bdn0"}'
+                    ),
+                },
+            ]
+        },
+    )
 
     requested_secrets: list[str] | None = Field(
         default=None,
