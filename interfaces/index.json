@@ -236,12 +236,12 @@
     "lib_url": "https://charmhub.io/sdcore-nrf-k8s/libraries/fiveg_nrf",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/fiveg_nrf/",
-    "summary": "",
-    "description": "",
+    "summary": "Get the URL of a 5G NRF.",
+    "description": "Within 5G, the Network Repository Function (NRF) is responsible for providing information about discovered network function instances.\nThe `fiveg_nrf` interface allows a network function to get the NRF's URL, so that it can register itself or learn about registered network functions.",
     "tags": [
       "telco"
     ],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "fiveg_rfsim",
