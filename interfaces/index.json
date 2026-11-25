@@ -43,16 +43,14 @@
   {
     "name": "certificate_transfer",
     "version": "1",
-    "lib": "charms.certificate_transfer_interface.certificate_transfer",
-    "lib_url": "https://charmhub.io/certificate-transfer-interface/libraries/certificate_transfer",
-    "lib_docs_url": "",
+    "lib": "charmlibs.interfaces.certificate_transfer",
+    "lib_url": "",
+    "lib_docs_url": "https://canonical.com/juju/docs/charmlibs/reference/charmlibs/interfaces/certificate-transfer",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/certificate_transfer/",
     "summary": "Receive public or CA certificates.",
-    "description": "The `certificate_transfer` interface allows charms to receive public and/or CA certificates.\nThe provider charm shares its certificates with the requirer.",
-    "tags": [
-      "security"
-    ],
-    "status": "draft"
+    "description": "The `certificate_transfer` interface allows charms to receive public certificates, such as CA certificates, to trust.\nThe provider charm shares a set of certificates, and the requirer uses them to authenticate TLS communications.\nIt is not for charms that need certificates for themselves, which use the `tls-certificates` interface.",
+    "tags": [],
+    "status": "published"
   },
   {
     "name": "cloudflared_route",
