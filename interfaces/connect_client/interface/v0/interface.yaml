@@ -5,7 +5,7 @@ lib: charms.data_platform_libs.data_interfaces
 summary: Interact with Kafka Connect clusters.
 description: |
   The `connect_client` interface allows charms, usually called integrators, to interact with Kafka Connect clusters to manage connectors and tasks.
-  An integrator might need a connector plugin, which is a bundle of JAR files that implement the Kafka Connect connector interface, or not (for example, a MirrorMaker integrator doesn't).
+  An integrator might need a connector plugin, which is a bundle of JAR files that implement the Kafka Connect connector interface. Some integrators, such as a MirrorMaker integrator, don't need one.
   The requirer charm gives the URL of its plugin, and the provider charm installs it on every Kafka Connect worker and shares credentials and REST endpoints, which the requirer uses to manage its connectors.
   Requirer charms can also use the [`kafkacl`](https://github.com/canonical/kafkacl) library, which has reusable code for Kafka Connect integrators.
 
