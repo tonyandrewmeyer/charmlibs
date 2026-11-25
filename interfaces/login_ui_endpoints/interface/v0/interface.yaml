@@ -2,17 +2,22 @@ name: login_ui_endpoints
 internal: true
 
 version: 0
-status: draft
+status: published
 lib: charms.identity_platform_login_ui_operator.login_ui_endpoints
+summary: Get the page URLs of the Identity Platform Login UI.
+description: |
+  The `login_ui_endpoints` interface allows Ory Hydra and Ory Kratos to send users to the pages of the Identity Platform Login UI.
+  The provider, the Login UI charm, supplies the URL of each page, such as the login, consent, error, and settings pages.
+  The requirer doesn't write anything.
 
 providers:
   - name: identity-platform-login-ui-operator
     url: https://github.com/canonical/identity-platform-login-ui-operator
 
 requirers:
-  - name: hydra-operator
+  - name: hydra
     url: https://github.com/canonical/hydra-operator
-  - name: kratos-operator
+  - name: kratos
     url: https://github.com/canonical/kratos-operator
 
 maintainer: identity

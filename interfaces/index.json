@@ -320,12 +320,12 @@
     "lib_url": "https://charmhub.io/hydra/libraries/hydra_endpoints",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/hydra_endpoints/",
-    "summary": "",
-    "description": "",
+    "summary": "Get the admin and public API endpoints of Ory Hydra.",
+    "description": "The `hydra_endpoints` interface allows the charms of the Identity Platform to get the URLs of the admin and public APIs of Ory Hydra.\nThe provider, the Hydra charm, supplies both URLs, and the requirer doesn't write anything.",
     "tags": [
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "ingress",
@@ -469,8 +469,8 @@
     "lib_url": "https://charmhub.io/kratos/libraries/kratos_info",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/kratos_info/",
-    "summary": "",
-    "description": "",
+    "summary": "Get information about an Ory Kratos deployment.",
+    "description": "The `kratos_info` interface allows the charms of the Identity Platform to get information about an Ory Kratos deployment.\nThe provider, the Kratos charm, supplies its API endpoints, the names and namespace of the Kubernetes ConfigMaps that hold its identity providers and identity schemas, and which features are enabled.\nThe requirer doesn't write anything.",
     "tags": [
       "identity-auth"
     ],
@@ -526,12 +526,12 @@
     "lib_url": "https://charmhub.io/identity-platform-login-ui-operator/libraries/login_ui_endpoints",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/login_ui_endpoints/",
-    "summary": "",
-    "description": "",
+    "summary": "Get the page URLs of the Identity Platform Login UI.",
+    "description": "The `login_ui_endpoints` interface allows Ory Hydra and Ory Kratos to send users to the pages of the Identity Platform Login UI.\nThe provider, the Login UI charm, supplies the URL of each page, such as the login, consent, error, and settings pages.\nThe requirer doesn't write anything.",
     "tags": [
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "milter",
