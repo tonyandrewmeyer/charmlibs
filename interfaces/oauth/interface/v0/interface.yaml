@@ -1,18 +1,39 @@
 name: oauth
 version: 0
-status: draft
+status: published
 lib: charmlibs.interfaces.oauth
 summary: Connect to an OAuth2/OIDC Provider.
 description: |
   The `oauth` interface allows charms to interface with an OAuth2/OIDC Provider.
-  The requirer acts as an OAuth2 client.
-  The provider exposes an OAuth2/OIDC Provider.
+  The requirer acts as an OAuth2 client, and supplies the client configuration, such as its redirect URIs, grant types, and scopes.
+  The provider exposes an OAuth2/OIDC Provider, registers a client for each relation, and supplies its endpoints and the client's credentials.
 
 providers:
-  - name: hydra-operator
-    url: https://www.github.com/canonical/hydra-operator
+  - name: hydra
+    url: https://github.com/canonical/hydra-operator
+  - name: authentik-server
+    url: https://github.com/canonical/authentik-server-operator
+  - name: oauth-external-idp-integrator
+    url: https://github.com/canonical/oauth-external-idp-integrator
 
 requirers:
-  []
+  - name: identity-platform-admin-ui
+    url: https://github.com/canonical/identity-platform-admin-ui-operator
+  - name: oauth2-proxy-k8s
+    url: https://github.com/canonical/oauth2-proxy-k8s-operator
+  - name: grafana-k8s
+    url: https://github.com/canonical/grafana-k8s-operator
+  - name: gatus-k8s
+    url: https://github.com/canonical/gatus-k8s-operator
+  - name: hook-service
+    url: https://github.com/canonical/hook-service-operator
+  - name: indico
+    url: https://github.com/canonical/indico-operator
+  - name: juju-jimm-k8s
+    url: https://github.com/canonical/jimm-k8s-operator
+  - name: mattermost-k8s
+    url: https://github.com/canonical/mattermost-k8s-operator
+  - name: tenant-service
+    url: https://github.com/canonical/tenant-service-operator
 
 maintainer: identity

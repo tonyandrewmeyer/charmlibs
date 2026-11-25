@@ -612,11 +612,11 @@
     "lib_docs_url": "https://canonical.com/juju/docs/charmlibs/reference/charmlibs/interfaces/oauth",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/oauth/",
     "summary": "Connect to an OAuth2/OIDC Provider.",
-    "description": "The `oauth` interface allows charms to interface with an OAuth2/OIDC Provider.\nThe requirer acts as an OAuth2 client.\nThe provider exposes an OAuth2/OIDC Provider.",
+    "description": "The `oauth` interface allows charms to interface with an OAuth2/OIDC Provider.\nThe requirer acts as an OAuth2 client, and supplies the client configuration, such as its redirect URIs, grant types, and scopes.\nThe provider exposes an OAuth2/OIDC Provider, registers a client for each relation, and supplies its endpoints and the client's credentials.",
     "tags": [
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "opencti_connector",
