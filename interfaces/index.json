@@ -500,11 +500,11 @@
     "lib_docs_url": "https://canonical.com/juju/docs/charmlibs/reference/charmlibs/interfaces/ldap",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/ldap/",
     "summary": "Configure and connect to a Lightweight Directory Access Protocol (LDAP) server.",
-    "description": "The `ldap` interface supports sharing configuration and connection information for a Lightweight Directory Access Protocol (LDAP) server.\nThe provider is responsible for sharing the LDAP URL and other information needed for the requirer to connect and perform LDAP operations.",
+    "description": "The `ldap` interface supports sharing configuration and connection information for a Lightweight Directory Access Protocol (LDAP) server.\nThe requirer can ask for a bind account with a user and group name.\nThe provider is responsible for sharing the LDAP URLs, the base DN, and a bind account, with its password in a Juju secret, so that the requirer can connect and perform LDAP operations.",
     "tags": [
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "litmus_auth",

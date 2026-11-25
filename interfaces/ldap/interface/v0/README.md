@@ -1,94 +1,28 @@
-# `ldap/v0`
+# ldap
 
-## Usage
-
-This relation interface describes the expected behavior of any charm claiming to
-be able to provide or consume the LDAP authentication configuration data.
-
-## Glossary of LDAP Terms
+## Glossary of LDAP terms
 
 | Abbreviation |            Term            |
 |:------------:|:--------------------------:|
 |      DN      |     Distinguished Name     |
 |     DIT      | Directory Information Tree |
 
-## Direction
-
-```mermaid
-flowchart TD
-    Requirer -- user, \ngroup --> Provider
-    Provider -- urls, \nldaps_urls, \nbase_dn, \nbind_dn, \nbind_password_secret, \nauth_method, \nstarttls --> Requirer
-```
-
 ## Behavior
 
-Both the `provider` and the `requirer` need to adhere to a certain set of
-criteria to be considered compatible with the `ldap` interface.
-
-Sensitive information is transmitted through Juju Secrets rather than directly
-through the relation databag(s).
+Keywords are as in RFC 2119.
 
 ### Provider
 
-- Is expected to use `user` and `group` provided by the `requirer` to create a
-  bind DN in the DIT for the `requirer` to use for the `bind` operation. If
-  the `requirer` does not provide `user` and `group`, the `provider`
-  leverages `requirer`'s Juju application name and model name.
-- Is expected to provide the `requirer` with necessary configuration for
-  performing LDAP authentications and operations.
-- Is expected to update the application databag if any field's data is changed
-  in the `provider` charmed application.
+- MUST write to the application databag from the leader unit.
+- MUST create a bind account in the DIT for the requirer, using the requirer's `user` and `group`, and MUST write its DN as `bind_dn`. If the requirer doesn't set `user` and `group`, SHOULD use the requirer's application name and model name.
+- MUST put the bind account's password in a Juju secret, under the `password` key, MUST grant the secret to the relation, and MUST write its ID as `bind_password_secret`, rather than putting the password in the databag.
+- SHOULD delete the secret when the relation is removed.
+- MAY write the URLs, base DN, and StartTLS setting before it has created the bind account.
+- MUST update the application databag when any of the data changes.
 
 ### Requirer
 
-- Is expected to optionally provide `user` and `group` for the `provider` to
-  generate the bind DN.
-- Is expected to consume the LDAP configuration data provided by the `provider`
-  to configure the `requirer`'s charmed application.
-
-> #### ⚠️ Use of special characters
-> Try to avoid the special characters
-> listed [here](https://datatracker.ietf.org/doc/html/rfc2253#section-2.4)
-> for the `user` and `group` in the `requirer`'s databag.
-
-## Relation Data
-
-[\[Pydantic Schema\]](./schema.py)
-
-### Provider
-
-The `provider` provides LDAP URL, base DN, and bind DN, and LDAP
-authentication method for the `requirer` to connect and perform LDAP operations.
-It should be placed in the **application** databag.
-
-#### Example
-
-```yaml
-  relation-info:
-    - endpoint: ldap
-      related-endpoint: ldap
-      application-data:
-        urls: [ldap://ldap.canonical.com:3893, ldap://ldap.ubuntu.com:3893]
-        ldaps_urls: [ldaps://ldap.canonical.com:3894, ldaps://ldap.ubuntu.com:3894]
-        base_dn: dc=canonical,dc=com
-        bind_dn: cn=app,ou=model,dc=canonical,dc=com
-        bind_password_secret: secret://59060ecc-0495-4a80-8006-5f1fc13fd783/cjqub6vubg2s77p3nio0
-        auth_method: simple
-        starttls: true
-```
-
-### Requirer
-
-The `requirer` provides LDAP client information. It should be placed in the
-**application** databag.
-
-#### Example
-
-```yaml
-  relation-info:
-    - endpoint: ldap
-      related-endpoint: ldap
-      application-data:
-        user: sssd
-        group: machine-localhost
-```
+- MAY write `user` and `group` to the application databag from the leader unit, for the provider to create the bind DN.
+- SHOULD avoid the [special characters in RFC 2253](https://datatracker.ietf.org/doc/html/rfc2253#section-2.4) in `user` and `group`.
+- SHOULD treat the relation as not ready until the provider's application databag has `urls` and `bind_dn`.
+- MUST use the LDAP configuration from the provider to configure its application, and MUST read the bind password from the secret.

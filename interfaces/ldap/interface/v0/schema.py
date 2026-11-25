@@ -3,57 +3,99 @@
 
 """LDAP relation schema definitions."""
 
-from pydantic import AnyUrl, BaseModel, Field
+from pydantic import AnyUrl, BaseModel, ConfigDict, Field, Json
 
 
 class ProviderAppData(BaseModel):
     """LDAP provider relation data schema."""
 
-    urls: list[AnyUrl] = Field(
-        description='List of LDAP URLs',
-        title='LDAP URLs',
-        example=['ldap://ldap.canonical.com:3893', 'ldap://ldap.ubuntu.com:3893'],
+    model_config = ConfigDict(
+        json_schema_extra={
+            'examples': [
+                {
+                    'urls': '["ldap://ldap.canonical.com:3893", "ldap://ldap.ubuntu.com:3893"]',
+                    'ldaps_urls': '["ldaps://ldap.canonical.com:3894", "ldaps://ldap.ubuntu.com:3894"]',
+                    'base_dn': 'dc=canonical,dc=com',
+                    'bind_dn': 'cn=sssd,ou=mymodel,dc=canonical,dc=com',
+                    'bind_password_secret': 'secret:cjqub6vubg2s77p3nio0',
+                    'auth_method': 'simple',
+                    'starttls': 'True',
+                },
+                {
+                    'urls': '["ldap://glauth-k8s.mymodel.svc.cluster.local:3893"]',
+                    'ldaps_urls': '[]',
+                    'base_dn': 'dc=glauth,dc=com',
+                    'starttls': 'False',
+                },
+            ]
+        }
     )
-    ldaps_urls: list[AnyUrl] = Field(
-        default=[],
-        description='List of LDAPS URLs',
+
+    urls: Json[list[AnyUrl]] = Field(
+        description='The LDAP URLs of the server, as a JSON list.',
+        title='LDAP URLs',
+        examples=['["ldap://ldap.canonical.com:3893", "ldap://ldap.ubuntu.com:3893"]'],
+    )
+    ldaps_urls: Json[list[AnyUrl]] | None = Field(
+        default=None,
+        description='The LDAPS URLs of the server, as a JSON list, which is empty without LDAPS.',
         title='LDAPS URLs',
-        example=['ldaps://ldap.canonical.com:3894', 'ldaps://ldap.ubuntu.com:3894'],
+        examples=['["ldaps://ldap.canonical.com:3894", "ldaps://ldap.ubuntu.com:3894"]', '[]'],
     )
     base_dn: str = Field(
-        description='The base entry as the starting point for LDAP search operation',
+        description='The base entry, as the starting point for LDAP search operations.',
         title='Base DN',
-        example='dc=canonical,dc=com',
+        examples=['dc=canonical,dc=com'],
     )
-    bind_dn: str = Field(
-        description='The distinguished name (DN) of the bind account',
+    bind_dn: str | None = Field(
+        default=None,
+        description='The distinguished name (DN) of the bind account for the requirer.',
         title='Bind DN',
-        example='cn=admin,ou=engineering,dc=canonical,dc=com',
+        examples=['cn=sssd,ou=mymodel,dc=canonical,dc=com'],
     )
-    bind_password_secret: str = Field(
-        description="The juju secret ID of the bind account's password",
-        example='secret://59060ecc-0495-4a80-8006-5f1fc13fd783/cjqub6vubg2s77p3nio0',
+    bind_password_secret: str | None = Field(
+        default=None,
+        description=(
+            "The ID of the Juju secret that holds the bind account's password, "
+            'under the `password` key.'
+        ),
+        title='Bind password secret',
+        examples=['secret:cjqub6vubg2s77p3nio0'],
     )
-    auth_method: str = Field(
-        description='The LDAP authentication method',
-        title='Authentication Method',
-        example='simple',
+    auth_method: str | None = Field(
+        default=None,
+        description='The LDAP authentication method.',
+        title='Authentication method',
+        examples=['simple'],
     )
     starttls: bool = Field(
-        description='The indicator of StartTLS operation enabled or not',
+        description='Whether the server supports StartTLS. Written as `True` or `False`.',
         title='StartTLS',
-        example=True,
+        examples=['True', 'False'],
     )
 
 
 class RequirerAppData(BaseModel):
     """LDAP requirer relation data schema."""
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            'examples': [
+                {'user': 'sssd', 'group': 'machine-localhost'},
+                {'user': 'postgresql', 'group': 'mymodel'},
+            ]
+        }
+    )
+
     user: str | None = Field(
-        description='The user name provided by the requirer charmed operator',
+        default=None,
+        description='The user name for the bind account. Defaults to the application name.',
+        examples=['sssd'],
     )
     group: str | None = Field(
-        description='The group name provided by the requirer charmed operator',
+        default=None,
+        description='The group name for the bind account. Defaults to the model name.',
+        examples=['machine-localhost', 'mymodel'],
     )
 
 
