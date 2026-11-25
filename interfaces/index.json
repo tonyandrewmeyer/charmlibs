@@ -565,12 +565,12 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/mongodb_client/",
     "summary": "Access MongoDB databases with unique credentials.",
-    "description": "The `mongodb_client` interface allows charms to access MongoDB databases with unique, relation-specific credentials transmitted via Juju Secrets.\nThe provider charm creates database users and provides connection details, while the requirer charm requests a database name and optional custom entities with specific role permissions.",
+    "description": "The `mongodb_client` interface allows charms to access MongoDB databases with unique, relation-specific credentials transmitted via Juju Secrets.\nThe provider charm creates database users and provides connection details, while the requirer charm requests a database name and optional custom entities with specific role permissions.\nIt follows the same pattern as the other `<database>_client` interfaces, such as `postgresql_client` and `mysql_client`.",
     "tags": [
       "data",
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "mysql_client",

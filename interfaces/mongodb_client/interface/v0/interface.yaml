@@ -1,18 +1,23 @@
 name: mongodb_client
 version: 0
-status: draft
+status: published
 lib: charms.data_platform_libs.data_interfaces
 summary: Access MongoDB databases with unique credentials.
 description: |
   The `mongodb_client` interface allows charms to access MongoDB databases with unique, relation-specific credentials transmitted via Juju Secrets.
   The provider charm creates database users and provides connection details, while the requirer charm requests a database name and optional custom entities with specific role permissions.
+  It follows the same pattern as the other `<database>_client` interfaces, such as `postgresql_client` and `mysql_client`.
 
 providers:
-  - name: mongodb-operator
-    url: https://www.github.com/canonical/mongodb-operator
-  - name: mongodb-k8s-operator
-    url: https://www.github.com/canonical/mongodb-k8s-operator
+  - name: mongodb
+    url: https://github.com/canonical/mongodb-operator
+  - name: mongodb-k8s
+    url: https://github.com/canonical/mongodb-k8s-operator
+  - name: mongos-k8s
+    url: https://github.com/canonical/mongos-k8s-operator
 
-requirers: []
+requirers:
+  - name: data-integrator
+    url: https://github.com/canonical/data-integrator
 
-maintainer: data-platform-nosql
+maintainer: data-nosql
