@@ -775,12 +775,12 @@
     "lib_url": "https://charmhub.io/sdcore-webui-k8s/libraries/sdcore_management",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/sdcore_management/",
-    "summary": "",
-    "description": "",
+    "summary": "Get the address of the SD-Core configuration and management service.",
+    "description": "Within Charmed 5G, the components that make configuration changes to the network need access to the configuration and management service.\nThe `sdcore_management` interface allows a charm to get the address of the endpoint of the configuration service in SD-Core.\nA typical provider is the SD-Core Webui charm, which is responsible for the configuration of the SD-Core network, and a typical requirer is the SD-Core NMS (Network Management System) charm, which provides a user interface to manage and configure the network.\nThe SD-Core NMS charm has since taken over the role of the Webui charm, and no longer uses this interface.",
     "tags": [
       "telco"
     ],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "smtp",

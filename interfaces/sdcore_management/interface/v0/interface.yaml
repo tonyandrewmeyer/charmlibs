@@ -2,10 +2,20 @@ name: sdcore_management
 internal: true
 
 version: 0
-status: draft
+status: retired
 lib: charms.sdcore_webui_k8s.sdcore_management
+summary: Get the address of the SD-Core configuration and management service.
+description: |
+  Within Charmed 5G, the components that make configuration changes to the network need access to the configuration and management service.
+  The `sdcore_management` interface allows a charm to get the address of the endpoint of the configuration service in SD-Core.
+  A typical provider is the SD-Core Webui charm, which is responsible for the configuration of the SD-Core network, and a typical requirer is the SD-Core NMS (Network Management System) charm, which provides a user interface to manage and configure the network.
+  The SD-Core NMS charm has since taken over the role of the Webui charm, and no longer uses this interface.
 
-providers: []
-requirers: []
+providers:
+  - name: sdcore-webui-k8s
+    url: https://github.com/canonical/sdcore-webui-k8s-operator
+requirers:
+  - name: sdcore-nms-k8s
+    url: https://github.com/canonical/sdcore-nms-k8s-operator
 
-maintainer: telco
+maintainer: charmlibs-maintainers
