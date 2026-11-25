@@ -6,12 +6,12 @@
     "lib_url": "https://pypi.org/project/charmlibs-interfaces-auth-proxy",
     "lib_docs_url": "https://canonical.com/juju/docs/charmlibs/reference/charmlibs/interfaces/auth-proxy",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/auth_proxy/",
-    "summary": "Configure an Identity and Access Proxy.",
-    "description": "The `auth_proxy` interface allows charms to configure an Identity and Access Proxy.\nThe requirer supplies the configuration, such as protected URLs, allowed endpoints, and headers.\nThe provider is responsible for transforming the configuration into access rules and forwarding relevant configuration to the proxy.",
+    "summary": "Protect an application with an Identity and Access Proxy.",
+    "description": "The `auth_proxy` interface allows a charm to ask an Identity and Access Proxy to require authentication for requests to it.\nThe requirer supplies the URLs to protect, the endpoints that don't need authentication, and the headers to set on authenticated requests.\nThe provider turns these into access rules, and passes the names of the applications to protect to an ingress over the `forward_auth` interface.",
     "tags": [
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "azure_service_principal",
@@ -262,12 +262,12 @@
     "lib_url": "https://pypi.org/project/charmlibs-interfaces-forward-auth",
     "lib_docs_url": "https://canonical.com/juju/docs/charmlibs/reference/charmlibs/interfaces/forward-auth",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/forward_auth/",
-    "summary": "",
-    "description": "",
+    "summary": "Forward authentication from an ingress to an Identity and Access Proxy.",
+    "description": "The `forward_auth` interface allows an ingress to delegate authentication to an Identity and Access Proxy.\nThe provider supplies the address that decides whether a request is authenticated, the names of the applications to protect, and the headers to pass on.\nThe requirer, an ingress, supplies the names of the applications it provides ingress to.",
     "tags": [
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "grafana_auth",

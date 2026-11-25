@@ -2,18 +2,28 @@ name: forward_auth
 internal: true
 
 version: 0
-status: draft
+status: published
 lib: charmlibs.interfaces.forward_auth
+summary: Forward authentication from an ingress to an Identity and Access Proxy.
+description: |
+  The `forward_auth` interface allows an ingress to delegate authentication to an Identity and Access Proxy.
+  The provider supplies the address that decides whether a request is authenticated, the names of the applications to protect, and the headers to pass on.
+  The requirer, an ingress, supplies the names of the applications it provides ingress to.
 
 providers:
-  - name: oauth2-proxy-k8s-operator
+  - name: oauth2-proxy-k8s
     url: https://github.com/canonical/oauth2-proxy-k8s-operator
+  - name: oathkeeper
+    url: https://github.com/canonical/oathkeeper-operator
+  - name: authorization-service
+    url: https://github.com/canonical/authorization-service-operator
 
 requirers:
-  - name: traefik-k8s-operator
+  - name: traefik-k8s
     url: https://github.com/canonical/traefik-k8s-operator
-  - name: istio-ingress-k8s-operator
-    url: https://github.com/canonical/istio-ingress-k8s-operator
-
+  - name: istio-ingress-k8s
+    url: https://github.com/canonical/service-mesh
+  - name: envoy-ingress-k8s
+    url: https://github.com/canonical/service-mesh
 
 maintainer: identity
