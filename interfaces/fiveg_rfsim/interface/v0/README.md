@@ -6,8 +6,7 @@ Keywords are as in RFC 2119.
 
 ### Provider
 
-- MUST write to the application databag from the leader unit.
-- MUST set `version` to the version of the interface that it uses.
+- MUST write to the application databag from the leader unit, with `version` set to the version of the interface that it uses.
 - MUST NOT write anything unless the requirer's `version` is the same as its own.
 - MUST write the radio settings (`band`, `dl_freq`, `carrier_bandwidth`, `numerology`, and `start_subcarrier`), because requirers treat the data as invalid without them.
 - MUST update the databag when any of these change.
