@@ -4,6 +4,11 @@ internal: true
 version: 0
 status: published
 lib: charms.mlops_libs.k8s_service_info
+summary: Share the name and port of a Kubernetes Service.
+description: |
+  The `k8s-service` interface allows a charm to tell another charm how to reach a Kubernetes [Service](https://kubernetes.io/docs/concepts/services-networking/service/).
+  The provider charm shares the name and port of the Service, and the requirer charm connects to it.
+  Most charms that use the interface do so with the deprecated `serialized-data-interface` (SDI), which has its own format; new charms use the library.
 
 
 # TODO: the kfp charms are in a multi-charm repo. Some setup will be required to configure the tester
@@ -16,6 +21,8 @@ providers:
     url: https://github.com/canonical/kfp-operators
   - name: kubeflow-profiles
     url: https://github.com/canonical/kubeflow-profiles-operator
+  - name: mlmd
+    url: https://github.com/canonical/mlmd-operator
 
 requirers:
   - name: kfp-api
@@ -23,6 +30,10 @@ requirers:
   - name: kfp-ui
     url: https://github.com/canonical/kfp-operators
   - name: kfp-persistence
+    url: https://github.com/canonical/kfp-operators
+  - name: kfp-schedwf
+    url: https://github.com/canonical/kfp-operators
+  - name: kfp-metadata-writer
     url: https://github.com/canonical/kfp-operators
   - name: kubeflow-dashboard
     url: https://github.com/canonical/kubeflow-dashboard-operator
