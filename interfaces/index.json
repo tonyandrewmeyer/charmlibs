@@ -856,7 +856,7 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/valkey_client/",
     "summary": "Access Valkey databases with credentials and TLS configuration.",
-    "description": "The `valkey_client` interface allows charms to access Valkey databases with user-specific credentials and TLS configuration.\nThe provider charm creates Valkey users and permissions based on requirer requests, while the requirer charm shares the desired key access prefix.",
+    "description": "The `valkey_client` interface allows charms to access Valkey databases with user-specific credentials and TLS configuration.\nThe provider charm creates Valkey users and permissions based on requirer requests, while the requirer charm shares the keys and Pub/Sub channels it wants to access.",
     "tags": [
       "data"
     ],
