@@ -1,15 +1,18 @@
 name: wazuh_api_client
 version: 0
-status: draft
-description: Connect to a Wazuh server.
-summary: |
-  The `wazuh_api_client` interface allows charms to connect to a Wazuh server.
-  The provider charm manages access to the server, securely providing credentials and endpoints to the requirer charms.
+status: published
+lib: charms.wazuh_server.wazuh_api
+summary: Connect to a Wazuh server's REST API.
+description: |
+  The `wazuh_api_client` interface allows charms to connect to the REST API of a Wazuh server.
+  The provider charm manages access to the server, and shares the API endpoint and a Juju secret with the credentials to use.
 
 providers:
-  - name: wazuh-server-operator
-    url: https://www.github.com/canonical/wazuh-server-operator
+  - name: wazuh-server
+    url: https://github.com/canonical/wazuh-server-operator
 
-requirers: []
+requirers:
+  - name: wazuh-dashboard
+    url: https://github.com/canonical/wazuh-dashboard-operator
 
 maintainer: platform-engineering

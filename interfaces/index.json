@@ -903,14 +903,14 @@
   {
     "name": "wazuh_api_client",
     "version": "0",
-    "lib": "",
+    "lib": "charms.wazuh_server.wazuh_api",
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/wazuh_api_client/",
-    "summary": "The `wazuh_api_client` interface allows charms to connect to a Wazuh server.\nThe provider charm manages access to the server, securely providing credentials and endpoints to the requirer charms.",
-    "description": "Connect to a Wazuh server.",
+    "summary": "Connect to a Wazuh server's REST API.",
+    "description": "The `wazuh_api_client` interface allows charms to connect to the REST API of a Wazuh server.\nThe provider charm manages access to the server, and shares the API endpoint and a Juju secret with the credentials to use.",
     "tags": [],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "zookeeper",
