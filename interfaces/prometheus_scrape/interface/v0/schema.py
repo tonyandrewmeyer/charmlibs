@@ -56,6 +56,16 @@ class AlertGroupModel(BaseModel):
     )
     rules: list[AlertRuleModel] = Field(
         description='The rules in the group.',
+        examples=[
+            [
+                {
+                    'alert': 'SomethingIsUp',
+                    'expr': 'something_bad == 1',
+                    'for': '0m',
+                    'labels': {'some-label': 'some-value'},
+                }
+            ]
+        ],
     )
 
 
@@ -65,6 +75,21 @@ class AlertRulesModel(BaseModel):
     groups: list[AlertGroupModel] = Field(
         default_factory=list,
         description='The rule groups. Absent when the provider has no rules.',
+        examples=[
+            [
+                {
+                    'name': 'an_alert_rule_group',
+                    'rules': [
+                        {
+                            'alert': 'SomethingIsUp',
+                            'expr': 'something_bad == 1',
+                            'for': '0m',
+                            'labels': {'some-label': 'some-value'},
+                        }
+                    ],
+                }
+            ]
+        ],
     )
 
 
