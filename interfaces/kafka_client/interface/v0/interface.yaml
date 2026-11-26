@@ -1,18 +1,33 @@
 name: kafka_client
 version: 0
-status: draft
+status: published
 lib: charms.data_platform_libs.data_interfaces
 summary: Interact with Kafka clusters as a client.
 description: |
-  The `kafka_client` interface allows charms to interact with Kafka clusters as producers, consumers, or admin clients.
-  The provider charm creates Kafka users with appropriate ACLs and permissions based on requested roles, while the requirer charm specifies its desired topic and role.
+  The `kafka_client` interface allows charms to interact with Apache Kafka clusters as producers, consumers, or admin clients.
+  The requirer charm asks for access to a topic with a set of roles, and the provider charm creates a Kafka user with the matching ACLs and shares the credentials and broker addresses.
+  Producers can then create their own topics with whichever client library they like, setting any topic-level configuration such as `replication-factor` and `partitions`.
 
 providers:
-  - name: kafka-operator
-    url: https://www.github.com/canonical/kafka-operator
-  - name: kafka-k8s-operator
-    url: https://www.github.com/canonical/kafka-k8s-operator
+  - name: kafka
+    url: https://github.com/canonical/kafka-operator/tree/main/machine
+  - name: kafka-k8s
+    url: https://github.com/canonical/kafka-operator/tree/main/k8s
 
-requirers: []
+requirers:
+  - name: kafka-connect
+    url: https://github.com/canonical/kafka-operator/tree/main/connect_machine
+  - name: kafka-connect-k8s
+    url: https://github.com/canonical/kafka-operator/tree/main/connect_k8s
+  - name: karapace
+    url: https://github.com/canonical/karapace-operator
+  - name: karapace-k8s
+    url: https://github.com/canonical/karapace-k8s-operator
+  - name: kafka-ui
+    url: https://github.com/canonical/kafka-ui-operator
+  - name: kafka-ui-k8s
+    url: https://github.com/canonical/kafka-ui-k8s-operator
+  - name: data-integrator
+    url: https://github.com/canonical/data-integrator
 
-maintainer: data-platform-bigdata
+maintainer: data-bigdata

@@ -76,12 +76,12 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/connect_client/",
     "summary": "Interact with Kafka Connect clusters.",
-    "description": "The `connect_client` interface allows charms to interact with Kafka Connect clusters for connector plugin and task management.\nThe provider charm manages the Kafka Connect cluster and deploys connector plugins from URLs supplied by the requirer, while the requirer charm manages its connectors and tasks using the provider's REST endpoints.",
+    "description": "The `connect_client` interface allows charms, usually called integrators, to interact with Kafka Connect clusters to manage connectors and tasks.\nAn integrator might need a connector plugin, which is a bundle of JAR files that implement the Kafka Connect connector interface. Some integrators, such as a MirrorMaker integrator, don't need one.\nThe requirer charm gives the URL of its plugin, and the provider charm installs it on every Kafka Connect worker and shares credentials and REST endpoints, which the requirer uses to manage its connectors.\nRequirer charms can also use the [`kafkacl`](https://github.com/canonical/kafkacl) library, which has reusable code for Kafka Connect integrators.",
     "tags": [
       "data",
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "cos_agent",
@@ -430,24 +430,27 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/kafka_client/",
     "summary": "Interact with Kafka clusters as a client.",
-    "description": "The `kafka_client` interface allows charms to interact with Kafka clusters as producers, consumers, or admin clients.\nThe provider charm creates Kafka users with appropriate ACLs and permissions based on requested roles, while the requirer charm specifies its desired topic and role.",
+    "description": "The `kafka_client` interface allows charms to interact with Apache Kafka clusters as producers, consumers, or admin clients.\nThe requirer charm asks for access to a topic with a set of roles, and the provider charm creates a Kafka user with the matching ACLs and shares the credentials and broker addresses.\nProducers can then create their own topics with whichever client library they like, setting any topic-level configuration such as `replication-factor` and `partitions`.",
     "tags": [
       "data",
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "karapace_client",
     "version": "0",
-    "lib": "",
-    "lib_url": "",
+    "lib": "charms.data_platform_libs.data_interfaces",
+    "lib_url": "https://charmhub.io/data-platform-libs/libraries/data_interfaces",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/karapace_client/",
     "summary": "Access Karapace schema registry services.",
-    "description": "The `karapace_client` interface allows charms to access Karapace schema registry services with user-specific credentials.\nThe provider charm manages Karapace users and subject access controls, while the requirer charm requests access to specific subjects with desired role permissions.",
-    "tags": [],
-    "status": "draft"
+    "description": "The `karapace_client` interface allows charms to access a Karapace schema registry with credentials of their own.\nThe requirer charm asks for access to a subject as a `user` or an `admin` client, and the provider charm creates a Karapace user with the matching access and shares the credentials and server addresses.\nUsers are granted read access to the subject that they asked for, and admins are granted full access to every subject.",
+    "tags": [
+      "data",
+      "identity-auth"
+    ],
+    "status": "published"
   },
   {
     "name": "kratos_external_idp",
@@ -914,13 +917,16 @@
   {
     "name": "zookeeper",
     "version": "0",
-    "lib": "",
-    "lib_url": "",
+    "lib": "charms.data_platform_libs.data_interfaces",
+    "lib_url": "https://charmhub.io/data-platform-libs/libraries/data_interfaces",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/zookeeper/",
-    "summary": "",
-    "description": "",
-    "tags": [],
-    "status": "draft"
+    "summary": "Connect to an Apache ZooKeeper cluster.",
+    "description": "The `zookeeper` interface allows charms to connect to an Apache ZooKeeper cluster with credentials of their own.\nThe requirer charm asks for a zNode, and the provider charm creates a user with access to that zNode and shares the credentials and server addresses.",
+    "tags": [
+      "data",
+      "identity-auth"
+    ],
+    "status": "published"
   }
 ]

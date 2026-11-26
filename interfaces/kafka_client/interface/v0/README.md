@@ -1,79 +1,31 @@
-# `kafka_client/v0`
-
-## Usage
-
-This relation interface describes the expected behavior of any charm claiming to be able to interface with a Kafka cluster as a client. For the majority of charms seeking to relate to a Kafka cluster, they will seek to do so as any of a producer, requirer or admin client.
-
-- Producers can expect their desired topic/wildcard to be granted `WRITE`, `DESCRIBE`, `CREATE` topic ACLs matching their application credentials upon relation. Producer clients then can create their own topics using whichever client-library they wish, setting any topic level configuration then (e.g `replication-factor` and `partitions`).
-- Consumers can expect to be granted ACLs for a specified topic with `READ`, `DESCRIBE` on topic, and `READ` on a wildcard-suffixed consumer-group upon relation. 
-- Admins can expect to be granted super-user permissions for their application credentials upon relation.
-
-## Direction
-
-```mermaid
-flowchart LR
-    Requirer -- topic, extra-user-roles, consumer-group-prefix --> Provider
-    Provider -- topic, username, password, endpoints, consumer-group-prefix, zookeeper-uris --> Requirer
-```
+# kafka_client
 
 ## Behavior
 
-Both the Requirer and the Provider need to adhere to the criteria, to be considered compatible with the interface.
-
-### Provider
-- Is expected to create an application `username` and `password` inside the kafka cluster when the requirer relates to the kafka cluster, using the SASL/SCRAM mechanism, stored in ZooKeeper.
-- Is expected to delete an application `username` and `password` from the kafka cluster when the relation is removed.
-- Is expected to provide a custom entity `entity-name` and `entity-password` inside the kafka cluster when the requirer relates to the kafka cluster when the `entity-type` field is supplied.
-- Is expected to delete a custom entity `entity-name` and `entity-password` from the kafka cluster when the relation is removed.
-- Is expected to provide the `endpoints` field with a comma-seperated list of broker hostnames / IP addresses.
-- Is expected to provide the `topic` field with the topic that was actually created.
-- Can optionally provide the `consumer-group-prefix` field with the prefixed consumer groups, if requirer `extra-user-roles` is includes `consumer`
-- Can optionally provide the `zookeeper-uris` field with a comma-seperated list of ZooKeeper server uris and Kafka cluster zNode, if the requirer `extra-user-roles` includes `admin`
-
-### Requirer
-- Can optionally provide the `topic` field specifying the topic that the requirer charm needs permissions to create (for `extra-user-roles=producer`), or consume (for `extra-user-roles=consumer`).
-- Is expected to tolerate that the Provider may ignore the `topic` field in some cases and instead use the topic name received.
-- Is expected to provide the `extra-user-roles` field specifying a comma-separated list of roles for the requested user or client application (between `admin`, `consumer` and `producer`).
-- Can optionally provide the `extra-group-roles` field specifying a comma-separated list of roles for the requested group (e.g. `extra-group-roles=admin`).
-- Can optionally provide the `entity-type` field specifying the type of entity to request, instead of a topic.
-- Can optionally provide the `entity-permissions` field specifying the permissions for the requested entity.
-- Can optionally provide the `consumer-group-prefix` field specifying the consumer-group-prefix that the requirer charm needs permissions to consume (for `extra-user-roles=consumer`).
-
-## Relation Data
-
-[\[Pydantic Schema\]](./schema.py)
+Keywords are as in RFC 2119.
 
 ### Provider
 
-Provider provides application credentials and server connection uris. It should be placed in the **application** databag.
-
-
-#### Example
-```yaml
-  relation-info:
-  - endpoint: kafka_client
-    related-endpoint: kafka_client
-    application-data:
-      username: user123
-      password: Dy0k2UTfyNt2B13cfe412K7YGs07S4U7
-      endpoints: 10.141.78.155:9092,10.141.78.62:9092,10.141.78.186:9092
-      consumer-group-prefix: user123-
-      zookeeper-uris: 10.141.78.133:2181,10.141.78.50:2181,10.141.78.45:2181/kafka
-
-```
+- MUST write to the application databag from the leader unit.
+- MUST create a SASL/SCRAM user for each relation once the requirer has written `topic`, and MUST NOT write the credentials until the user exists.
+- MUST grant the user ACLs for the roles in `extra-user-roles`. The `producer` role gets `WRITE`, `DESCRIBE`, and `CREATE` on the topic. The `consumer` role gets `READ` and `DESCRIBE` on the topic, and `READ` on the consumer groups that start with `consumer-group-prefix`. The `admin` role makes the user a super-user. The `manager` role gets every operation on every topic, group, and transactional ID.
+- SHOULD grant the user the permissions in `entity-permissions`, as well as those from its roles.
+- If the requirer writes `entity-type`, SHOULD create a custom entity with `entity-name` and `entity-password`, and MUST delete it when the relation is removed.
+- MUST delete the user and its ACLs from the Kafka cluster when the relation is removed.
+- MAY give the requirer a different topic from the one it asked for.
+- If the requirer lists the credentials in `requested-secrets`, MUST put them in a Juju secret, under the `username` and `password` keys, write the secret's ID to `secret-user`, and grant the secret to the relation. Otherwise, MAY write them to `username` and `password` in plain text, for requirers that don't support secrets.
+- MUST write `tls` as `enabled` or `disabled`, and SHOULD provide the CA chain in `tls-ca` when TLS is enabled, in the `secret-tls` secret if the requirer lists it in `requested-secrets`.
+- If `extra-user-roles` includes `consumer`, MAY write `consumer-group-prefix`.
+- MAY write `zookeeper-uris`, for admin clients that need to reach ZooKeeper directly.
+- If the requirer provides `mtls-cert`, MAY also authenticate the requirer by that certificate, granting the same ACLs to the certificate's principal. This needs TLS on the provider.
+- MUST update the databag, or the secrets' content, when the endpoints, credentials, or TLS settings change.
 
 ### Requirer
 
-Requirer provides application role and topic. It should be placed in the **application** databag.
-
-#### Example
-
-```yaml
-  relation-info:
-  - endpoint: kafka_client
-    related-endpoint: kafka_client
-    application-data:
-        extra-user-roles: consumer,producer
-        topic: special-topic
-        consumer-group-prefix: "my-consumer-group"
-```
+- MUST write `topic` to the application databag from the leader unit.
+- SHOULD write `extra-user-roles`, with the roles that it needs.
+- MAY write `consumer-group-prefix`, `extra-group-roles`, `entity-type`, and `entity-permissions`.
+- MUST NOT change `entity-type`, `extra-user-roles`, or `extra-group-roles` once the provider has responded.
+- SHOULD list `username`, `password`, `tls`, and `tls-ca` in `requested-secrets`.
+- MUST use the topic in the provider's databag, which might not be the one it asked for.
+- SHOULD treat the relation as not ready until the endpoints and credentials are all available.
