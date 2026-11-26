@@ -1,75 +1,23 @@
-# `jwt/v0`
-
-## Overview
-
-This relation interface describes the expected behavior of any charm providing or requiring configuration options for self-contained JSON Web Tokens (JWT).
-Self-contained JWTs are tokens that include all the necessary information for validation within the token itself, enabling APIs to verify them without making external calls.
-The approach involves adding key information directly to the JWT header, which APIs can extract and pass to a JWT validation library.
-
-## Usage
-
-Charms claiming to provide this interface must provide sensitive information (such as the signing key) via Juju secrets to the requirer.
-
-The secret is expected to have the following content:
-```
-cuni0uh34trs5tihuf9g:
-[...]
-  content:
-    signing-key: |2
-              -----BEGIN PUBLIC KEY-----
-              MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQK...
-              -----END PUBLIC KEY-----
-```
-
-## Direction
-
-The `jwt` interface implements a provider/requirer pattern.
-The requirer is a charm that wishes to apply the JWT configuration to its workload, and the provider is a charm exposing the configuration options.
-
-```mermaid
-flowchart TD
-    Provider -- signing-key, roles-key, jwt-header, etc --> Requirer
-```
+# jwt
 
 ## Behavior
 
-The requirer and the provider must adhere to a certain set of criteria to be considered compatible with the interface.
+Keywords are as in RFC 2119.
+
+Both charms MUST run on Juju 3 or later, so that they can use Juju secrets.
 
 ### Provider
 
-- Is expected to always provide its mandatory configuration options (`signing-key`, `roles-key`).
-- Is expected to provide its optional configuration options (`jwt-header`, `jwt-url-parameter`, `subject-key`, `required-audience`, `required-issuer`, `jwt-clock-skew-tolerance`) if a value has been set for them.
-- Is expected to place the `signing-key` in a juju secret and provide the juju secret ID in the relation databag (`signing-key`).
-- Is expected to provide all non-sensitive information in the relation databag.
-
-As mentioned above the field `signing-key` holds the id of a Juju Secret, this means that the charms implementing the relation must be running on Juju >3 in order be able to use Juju secrets.
+- MUST write the settings to the application databag from the leader unit.
+- MUST always provide the signing key and `roles-key`, and MUST NOT write anything until both are set.
+- MUST provide each of the optional settings (`jwt-header`, `jwt-url-parameter`, `subject-key`, `required-audience`, `required-issuer`, and `jwt-clock-skew-tolerance`) that has a value, and only those.
+- MUST put the signing key in a Juju secret, under the `signing-key` key, write the secret's ID to `secret-extra`, and grant the secret to the relation.
+- MUST put everything other than the signing key in the databag.
+- MUST update the databag, or the secret's content, when the settings change.
 
 ### Requirer
 
-- Is expected to use all the JWT configuration provided.
-- Must support Juju secrets.
-- Is not expected to write anything to the databag.
-
-## Relation Data
-
-### Provider
-
-[\[JSON Schema\]](./schemas/provider.json)
-
-Provider provides its configurations in the **application** databag and the `signing-key` as a Juju secret.
-
-#### Example
-
-```yaml
-related-units: {}
-application_data: {
-  "signing-key": "secret:cuni0uh34trs5tihuf9g",
-  "roles-key": "roles",
-  "jwt-header": "Authorization",
-  "jwt-url-parameter": "jwt",
-  "subject-key": "user",
-  "required-audience": "opensearch",
-  "required-issuer": "my-identity-provider",
-  "jwt-clock-skew-tolerance": "60",
-}
-```
+- MUST NOT write to either databag.
+- MUST read the signing key from the `signing-key` key of the secret in `secret-extra`.
+- MUST use all the settings that the provider gives.
+- SHOULD apply the new signing key when the secret changes.

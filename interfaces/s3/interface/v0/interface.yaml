@@ -1,31 +1,27 @@
 name: s3
 version: 0
-status: draft
+status: published
+lib: charms.data_platform_libs.s3
 summary: Access S3-compatible object storage providers.
 description: |
-  The `s3` interface allows charms to access S3-compatible object storage providers with bucket-specific credentials and connection details.
-  The provider charm shares storage credentials and configuration for a bucket, while the requirer charm specifies the bucket name or allows the provider to assign one.
+  The `s3` interface allows charms to access S3-compatible object storage, such as AWS S3, MinIO, Ceph, or Rook, with bucket-specific credentials and connection details.
+  The provider charm shares the credentials and configuration for a bucket in plain text, while the requirer charm asks for a bucket name, which the provider might ignore.
+  In v1 of the interface, the credentials are in a Juju secret instead.
 
 providers:
   - name: s3-integrator
-    url: https://www.github.com/canonical/s3-integrator
+    url: https://github.com/canonical/s3-integrator
 
 requirers:
-  - name: mysql-operator
-    url: https://www.github.com/canonical/mysql-operator
-  - name: mysql-k8s-operator
-    url: https://www.github.com/canonical/mysql-k8s-operator
-  - name: postgresql-operator
-    url: https://www.github.com/canonical/postgresql-operator
-  - name: postgresql-k8s-operator
-    url: https://www.github.com/canonical/postgresql-k8s-operator
-  - name: mongodb-operator
-    url: https://www.github.com/canonical/mongodb-operator
-  - name: mongodb-k8s-operator
-    url: https://www.github.com/canonical/mongodb-k8s-operator
-  - name: spark-integration-hub-k8s-operator
-    url: https://github.com/canonical/spark-integration-hub-k8s-operator
-  - name: spark-history-server-k8s-operator
-    url: https://github.com/canonical/spark-history-server-k8s-operator
+  - name: postgresql
+    url: https://github.com/canonical/postgresql-operator
+  - name: postgresql-k8s
+    url: https://github.com/canonical/postgresql-k8s-operator
+  - name: mongodb
+    url: https://github.com/canonical/mongodb-operator
+  - name: mongodb-k8s
+    url: https://github.com/canonical/mongodb-k8s-operator
+  - name: velero-operator
+    url: https://github.com/canonical/velero-operator
 
-maintainer: data-platform
+maintainer: data

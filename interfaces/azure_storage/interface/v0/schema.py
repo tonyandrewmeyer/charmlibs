@@ -24,7 +24,31 @@ class _BareStringDatabag(BaseModel):
 class ProviderAppData(_BareStringDatabag):
     """The provider's application databag."""
 
-    model_config = ConfigDict(strict=True, populate_by_name=True)
+    model_config = ConfigDict(
+        strict=True,
+        populate_by_name=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "version": "1",
+                    "secret-extra": "secret://91f805c5-5b49-47a3-8e7b-70befa766caf/d40rbhnmp25c76d6bdn0",
+                    "container": "test-container",
+                    "storage-account": "test-storage-account",
+                    "connection-protocol": "abfss",
+                    "path": "spark-events/",
+                    "endpoint": "abfss://test-container@test-storage-account.dfs.core.windows.net/",
+                },
+                {
+                    "container": "test-container",
+                    "storage-account": "test-storage-account",
+                    "connection-protocol": "wasbs",
+                    "secret-key": "random-secret-key",
+                    "endpoint": "wasbs://test-container@test-storage-account.blob.core.windows.net/",
+                    "resource-group": "my-resource-group",
+                },
+            ]
+        },
+    )
 
     container: str | None = Field(
         default=None,
@@ -57,7 +81,7 @@ class ProviderAppData(_BareStringDatabag):
         default=None,
         alias="secret-extra",
         description=(
-            "A Juju Secret ID that points to a secret containing secret-key, the key"
+            "A Juju secret ID that points to a secret containing secret-key, the key"
             " corresponding to the storage account for connecting to the object storage."
         ),
         examples=["secret://91f805c5-5b49-47a3-8e7b-70befa766caf/d40rbhnmp25c76d6bdn0"],
@@ -144,7 +168,27 @@ class ProviderAppData(_BareStringDatabag):
 class RequirerAppData(_BareStringDatabag):
     """The requirer's application databag."""
 
-    model_config = ConfigDict(strict=True, populate_by_name=True)
+    model_config = ConfigDict(
+        strict=True,
+        populate_by_name=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "version": "1",
+                    "requested-secrets": '["secret-key"]',
+                    "container": "test-container",
+                },
+                {
+                    "container": "relation-3",
+                    "requested-secrets": '["secret-key"]',
+                    "provided-secrets": (
+                        '["username", "password", "uris", "read-only-uris", "tls", "tls-ca",'
+                        ' "mtls-cert", "entity-name", "entity-password"]'
+                    ),
+                },
+            ]
+        },
+    )
 
     container: str | None = Field(
         default=None,
@@ -153,15 +197,27 @@ class RequirerAppData(_BareStringDatabag):
             " relation-<id> written to signal an older provider."
         ),
         examples=["mycontainer", "relation-3"],
-        title="container",
+        title="Container",
     )
 
     requested_secrets: list[str] | None = Field(
         default=None,
         alias="requested-secrets",
-        description="Any provider field which should be transfered as Juju Secret. A JSON array on the wire.",
+        description="Any provider field which should be transferred as a Juju secret. A JSON array on the wire.",
         examples=[["secret-key"]],
         title="Requested secrets",
+    )
+
+    provided_secrets: list[str] | None = Field(
+        default=None,
+        alias="provided-secrets",
+        description=(
+            "Requirer fields the library would deliver as Juju secrets, written by requirers"
+            " on the older data_interfaces v0 based library (such as velero-operator). The"
+            " provider doesn't read it. A JSON array on the wire."
+        ),
+        examples=[["username", "password", "tls", "tls-ca", "uris"]],
+        title="Provided secrets",
     )
 
     version: str | None = Field(
@@ -171,14 +227,14 @@ class RequirerAppData(_BareStringDatabag):
         title="Schema version",
     )
 
-    @field_validator("requested_secrets", mode="before")
+    @field_validator("requested_secrets", "provided_secrets", mode="before")
     @classmethod
     def _load_json(cls, value: Any) -> Any:
         if not isinstance(value, str):
             return value  # __init__ argument was already deserialized.
         return json.loads(value)
 
-    @field_serializer("requested_secrets")
+    @field_serializer("requested_secrets", "provided_secrets")
     def _dump_json(self, value: object) -> str | None:
         if value is None:
             return None
@@ -188,7 +244,23 @@ class RequirerAppData(_BareStringDatabag):
 class RequirerUnitData(_BareStringDatabag):
     """The requirer's unit databag, written by the library for its own bookkeeping."""
 
-    model_config = ConfigDict(strict=True, populate_by_name=True)
+    model_config = ConfigDict(
+        strict=True,
+        populate_by_name=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "requested-secrets": '["secret-key"]',
+                    "data": (
+                        '{"version": "1", "secret-extra": "secret://91f805c5-5b49-47a3-8e7b-70befa766caf/d40rbhnmp25c76d6bdn0",'
+                        ' "container": "test-container", "storage-account": "test-storage-account",'
+                        ' "connection-protocol": "abfss",'
+                        ' "endpoint": "abfss://test-container@test-storage-account.dfs.core.windows.net/"}'
+                    ),
+                },
+            ]
+        },
+    )
 
     requested_secrets: list[str] | None = Field(
         default=None,
@@ -196,6 +268,17 @@ class RequirerUnitData(_BareStringDatabag):
         description="A copy of requested-secrets from the application databag. A JSON array on the wire.",
         examples=[["secret-key"]],
         title="Requested secrets",
+    )
+
+    provided_secrets: list[str] | None = Field(
+        default=None,
+        alias="provided-secrets",
+        description=(
+            "A copy of provided-secrets from the application databag, written by requirers on"
+            " the older data_interfaces v0 based library. A JSON array on the wire."
+        ),
+        examples=[["username", "password", "tls", "tls-ca", "uris"]],
+        title="Provided secrets",
     )
 
     data: dict[str, str] | None = Field(
@@ -208,14 +291,14 @@ class RequirerUnitData(_BareStringDatabag):
         title="Last seen provider data",
     )
 
-    @field_validator("requested_secrets", "data", mode="before")
+    @field_validator("requested_secrets", "provided_secrets", "data", mode="before")
     @classmethod
     def _load_json(cls, value: Any) -> Any:
         if not isinstance(value, str):
             return value  # __init__ argument was already deserialized.
         return json.loads(value)
 
-    @field_serializer("requested_secrets", "data")
+    @field_serializer("requested_secrets", "provided_secrets", "data")
     def _dump_json(self, value: object) -> str | None:
         if value is None:
             return None

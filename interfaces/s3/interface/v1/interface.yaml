@@ -1,16 +1,32 @@
 name: s3
 version: 1
-status: draft
+status: published
 lib: object-storage-charmlib
+summary: Access S3-compatible object storage providers.
+description: |
+  The `s3` interface allows charms to access S3-compatible object storage, such as AWS S3, MinIO, Ceph, or Rook, with bucket-specific credentials and connection details.
+  The provider charm shares the configuration for a bucket, with the credentials in a Juju secret, while the requirer charm can ask for a bucket and a path, which the provider might ignore.
 
 providers:
   - name: s3-integrator
     url: https://github.com/canonical/object-storage-integrator/tree/main/s3
 
 requirers:
-  # No requirers have yet implemented S3 v1 interface, so to supress the linter error,
-  # a dummy charm used in integration tests for s3-integrator is being added here.
-  - name: test-charm-s3
-    url: https://github.com/canonical/object-storage-integrator/tree/main/s3/tests/integration/test-charm-s3
+  - name: mysql
+    url: https://github.com/canonical/mysql-operators/tree/main/machines
+  - name: mysql-k8s
+    url: https://github.com/canonical/mysql-operators/tree/main/kubernetes
+  - name: opensearch
+    url: https://github.com/canonical/opensearch-operator/tree/main/machine
+  - name: opensearch-k8s
+    url: https://github.com/canonical/opensearch-operator/tree/main/kubernetes
+  - name: spark-integration-hub-k8s
+    url: https://github.com/canonical/spark-integration-hub-k8s-operator
+  - name: spark-history-server-k8s
+    url: https://github.com/canonical/spark-history-server-k8s-operator
+  - name: cassandra
+    url: https://github.com/canonical/cassandra-operator
+  - name: valkey
+    url: https://github.com/canonical/valkey-operator
 
-maintainer: data-platform
+maintainer: data
