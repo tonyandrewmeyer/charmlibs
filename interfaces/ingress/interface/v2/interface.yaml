@@ -2,11 +2,38 @@ name: ingress
 version: 2
 status: published
 lib: charms.traefik_k8s.ingress
+summary: Route external traffic to an application, load-balanced across its units.
+description: |
+  The `ingress` interface lets a charm request ingress for its application.
+  The requirer sends the port to expose and the address of each of its units, and the provider configures an ingress that load-balances across those units and returns the URL at which the application is reachable.
 
 providers:
   - name: traefik-k8s
     url: https://github.com/canonical/traefik-k8s-operator
 
-requirers: []
+  - name: nginx-ingress-integrator
+    url: https://github.com/canonical/nginx-ingress-integrator-operator
+
+  - name: gateway-api-integrator
+    url: https://github.com/canonical/gateway-api-integrator-operator
+
+  - name: istio-ingress-k8s
+    url: https://github.com/canonical/service-mesh
+
+requirers:
+  - name: alertmanager-k8s
+    url: https://github.com/canonical/alertmanager-k8s-operator
+
+  - name: grafana-k8s
+    url: https://github.com/canonical/grafana-k8s-operator
+
+  - name: catalogue-k8s
+    url: https://github.com/canonical/catalogue-k8s-operator
+
+  - name: jenkins-k8s
+    url: https://github.com/canonical/jenkins-k8s-operator
+
+  - name: synapse
+    url: https://github.com/canonical/synapse-operator
 
 maintainer: platform-engineering

@@ -2,121 +2,123 @@
 # See LICENSE file for licensing details.
 """This file defines the schema for the provider side of the saml interface.
 
-Examples:
-    Provider:
-        unit: <empty>
-        app: {"saml":
-                 {
-                    "metadata_url": "https://login.ubuntu.com/saml/metadata",
-                    "entity_id": "https://login.ubuntu.com",
-                    "single_sign_on_service_redirect_url": "https://login.ubuntu.com/saml/",
-                    "single_sign_on_service_redirect_binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
-                    "single_logout_service_redirect_url": "https://login.ubuntu.com/+logout",
-                    "single_logout_service_redirect_binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
-                    "x509certs": "-----BEGIN CERTIFICATE-----\n
-                        MIIC6DCCAdCgAwIBAgIUW42TU9LSjEZLMCclWrvSwAsgRtcwDQYJKoZIhvcNAQEL\n
-                        BQAwIDELMAkGA1UEBhMCVVMxETAPBgNVBAMMCHdoYXRldmVyMB4XDTIzMDMyNDE4\n
-                        NDMxOVoXDTI0MDMyMzE4NDMxOVowPDELMAkGA1UEAwwCb2sxLTArBgNVBC0MJGUw\n
-                        NjVmMWI3LTE2OWEtNDE5YS1iNmQyLTc3OWJkOGM4NzIwNjCCASIwDQYJKoZIhvcN\n
-                        AQEBBQADggEPADCCAQoCggEBAK42ixoklDH5K5i1NxXo/AFACDa956pE5RA57wlC\n
-                        BfgUYaIDRmv7TUVJh6zoMZSD6wjSZl3QgP7UTTZeHbvs3QE9HUwEkH1Lo3a8vD3z\n
-                        eqsE2vSnOkpWWnPbfxiQyrTm77/LAWBt7lRLRLdfL6WcucD3wsGqm58sWXM3HG0f\n
-                        SN7PHCZUFqU6MpkHw8DiKmht5hBgWG+Vq3Zw8MNaqpwb/NgST3yYdcZwb58G2FTS\n
-                        ZvDSdUfRmD/mY7TpciYV8EFylXNNFkth8oGNLunR9adgZ+9IunfRKj1a7S5GSwXU\n
-                        AZDaojw+8k5i3ikztsWH11wAVCiLj/3euIqq95z8xGycnKcCAwEAATANBgkqhkiG\n
-                        9w0BAQsFAAOCAQEAWMvcaozgBrZ/MAxzTJmp5gZyLxmMNV6iT9dcqbwzDtDtBvA/\n
-                        46ux6ytAQ+A7Bd3AubvozwCr1Id6g66ae0blWYRRZmF8fDdX/SBjIUkv7u9A3NVQ\n
-                        XN9gsEvK9pdpfN4ZiflfGSLdhM1STHycLmhG6H5s7HklbukMRhQi+ejbSzm/wiw1\n
-                        ipcxuKhSUIVNkTLusN5b+HE2gwF1fn0K0z5jWABy08huLgbaEKXJEx5/FKLZGJga\n
-                        fpIzAdf25kMTu3gggseaAmzyX3AtT1i8A8nqYfe8fnnVMkvud89kq5jErv/hlMC9\n
-                        49g5yWQR2jilYYM3j9BHDuB+Rs+YS5BCep1JnQ==\n
-                        -----END CERTIFICATE-----\n"
-                }
-             }
+It defines one model, `ProviderAppData`.
 """
 
-from pydantic import AnyHttpUrl, BaseModel, Field
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field
 
 
 class ProviderAppData(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "entity_id": "https://login.ubuntu.com",
+                    "metadata_url": "https://login.ubuntu.com/saml/metadata",
+                    "x509certs": "MIIC6DCCAdCgAwIBAgIUW42TU9LSjEZLMCclWrvSwAsgRtcwDQYJKoZIhvcNAQEL",
+                    "single_sign_on_service_redirect_url": "https://login.ubuntu.com/saml/",
+                    "single_sign_on_service_redirect_binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
+                    "single_sign_on_service_post_url": "https://login.ubuntu.com/saml/",
+                    "single_sign_on_service_post_binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
+                    "single_logout_service_redirect_url": "https://login.ubuntu.com/+logout",
+                    "single_logout_service_redirect_binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
+                },
+                {
+                    "entity_id": "urn:example:idp",
+                    "x509certs": "MIIC6DCCAdCgAwIBAgIUW42TU9LSjEZLMCclWrvSwAsgRtcwDQYJKoZIhvcNAQEL,MIIDBzCCAe+gAwIBAgIJAPr/Mrlc8EGhMA0GCSqGSIb3DQEBBQUAMBoxGDAWBgNV",
+                    "single_sign_on_service_redirect_url": "https://idp.example.com/sso",
+                    "single_sign_on_service_redirect_binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
+                    "single_logout_service_redirect_url": "https://idp.example.com/slo",
+                    "single_logout_service_redirect_binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
+                    "single_logout_service_redirect_response_url": "https://idp.example.com/slo/response",
+                    "single_logout_service_post_url": "https://idp.example.com/slo",
+                    "single_logout_service_post_binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
+                    "single_logout_service_post_response_url": "https://idp.example.com/slo/post-response",
+                },
+            ]
+        }
+    )
+
+    entity_id: str = Field(
+        min_length=1,
+        description="Identifier of the IdP entity. This is a URI, but not necessarily a URL.",
+        title="Entity ID",
+        examples=["https://login.ubuntu.com", "urn:example:idp"],
+    )
     metadata_url: AnyHttpUrl | None = Field(
-        description="URL to the IdP's metadata.",
+        default=None,
+        description="URL to the IdP's metadata. Not set when the provider was given the metadata directly.",
         title="Metadata URL",
         examples=["https://login.ubuntu.com/saml/metadata"],
     )
-    entity_id: AnyHttpUrl = Field(
-        description="Identifier of the IdP entity.",
-        title="Entity ID",
-        examples=["https://login.ubuntu.com"],
+    x509certs: str = Field(
+        description=(
+            "Comma-separated list of the IdP's public X.509 certificates, as they appear in the "
+            "`X509Certificate` elements of the metadata: base64-encoded DER, without PEM headers."
+        ),
+        title="Public IdP certificates",
+        examples=[
+            "MIIC6DCCAdCgAwIBAgIUW42TU9LSjEZLMCclWrvSwAsgRtcwDQYJKoZIhvcNAQEL",
+            "MIIC6DCCAdCgAwIBAgIUW42TU9LSjEZLMCclWrvSwAsgRtcwDQYJKoZIhvcNAQEL,MIIDBzCCAe+gAwIBAgIJAPr/Mrlc8EGhMA0GCSqGSIb3DQEBBQUAMBoxGDAWBgNV",
+        ],
     )
     single_sign_on_service_redirect_url: AnyHttpUrl = Field(
-        description="URL target of the IdP where the Authentication REDIRECT Request Message will be sent.",
+        description="URL of the IdP's `SingleSignOnService` endpoint with the HTTP-Redirect binding, where the SP sends authentication requests.",
         title="SSO REDIRECT URL",
         examples=["https://login.ubuntu.com/saml/"],
     )
     single_sign_on_service_redirect_binding: str = Field(
-        description="SAML protocol binding to be used when returning the REDIRECT <Response> message.",
+        description="SAML protocol binding of the HTTP-Redirect `SingleSignOnService` endpoint.",
         title="SSO REDIRECT binding",
         examples=["urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"],
     )
     single_sign_on_service_post_url: AnyHttpUrl | None = Field(
-        description="URL target of the IdP where the Authentication POST Request Message will be sent.",
-        title="SSO POST response URL",
+        default=None,
+        description="URL of the IdP's `SingleSignOnService` endpoint with the HTTP-POST binding, if it has one.",
+        title="SSO POST URL",
         examples=["https://login.ubuntu.com/saml/"],
     )
     single_sign_on_service_post_binding: str | None = Field(
-        description="SAML protocol binding to be used when returning the POST <Response> message.",
+        default=None,
+        description="SAML protocol binding of the HTTP-POST `SingleSignOnService` endpoint.",
         title="SSO POST binding",
-        examples=["urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Post"],
+        examples=["urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"],
     )
-    single_logout_service_url: AnyHttpUrl | None = Field(
-        description="URL Location where the <LogoutRequest> from the IdP will be sent (IdP-initiated logout).",
-        title="SP Logout URL",
-        examples=["https://example.com/logout"],
-    )
-    single_logout_service_redirect_response_url: AnyHttpUrl | None = Field(
-        description="URL Location where the REDIRECT <LogoutResponse> from the IdP will sent (SP-initiated logout, reply): only specify if different from url parameter.",
-        title="SSO logout REDIRECT response URL",
-        examples=["https://example.com/logout"],
+    single_logout_service_redirect_url: AnyHttpUrl | None = Field(
+        default=None,
+        description="URL of the IdP's `SingleLogoutService` endpoint with the HTTP-Redirect binding, if it has one.",
+        title="SLO REDIRECT URL",
+        examples=["https://login.ubuntu.com/+logout"],
     )
     single_logout_service_redirect_binding: str | None = Field(
-        description="SAML protocol binding to be used when returning the REDIRECT <Response> message.",
-        title="SSO logout REDIRECT binding",
+        default=None,
+        description="SAML protocol binding of the HTTP-Redirect `SingleLogoutService` endpoint.",
+        title="SLO REDIRECT binding",
         examples=["urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"],
     )
-    single_logout_service_post_response_url: AnyHttpUrl | None = Field(
-        description="URL Location where the POST <LogoutResponse> from the IdP will sent (SP-initiated logout, reply): only specify if different from url parameter.",
-        title="SSO logout POST response URL",
-        examples=["https://example.com/logout"],
+    single_logout_service_redirect_response_url: AnyHttpUrl | None = Field(
+        default=None,
+        description="URL where the IdP expects the REDIRECT `<LogoutResponse>`, if it differs from `single_logout_service_redirect_url`.",
+        title="SLO REDIRECT response URL",
+        examples=["https://idp.example.com/slo/response"],
+    )
+    single_logout_service_post_url: AnyHttpUrl | None = Field(
+        default=None,
+        description="URL of the IdP's `SingleLogoutService` endpoint with the HTTP-POST binding, if it has one.",
+        title="SLO POST URL",
+        examples=["https://idp.example.com/slo"],
     )
     single_logout_service_post_binding: str | None = Field(
-        description="SAML protocol binding to be used when returning the POST <Response> message.",
-        title="SSO logout POST binding",
-        examples=["urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Post"],
+        default=None,
+        description="SAML protocol binding of the HTTP-POST `SingleLogoutService` endpoint.",
+        title="SLO POST binding",
+        examples=["urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST"],
     )
-    x509certs: str = Field(
-        description="Comma separated list of public X.509 certificates of the IdP.",
-        title="Public IdP certificates",
-        examples=[
-            """-----BEGIN CERTIFICATE-----
-            MIIC6DCCAdCgAwIBAgIUW42TU9LSjEZLMCclWrvSwAsgRtcwDQYJKoZIhvcNAQEL
-            BQAwIDELMAkGA1UEBhMCVVMxETAPBgNVBAMMCHdoYXRldmVyMB4XDTIzMDMyNDE4
-            NDMxOVoXDTI0MDMyMzE4NDMxOVowPDELMAkGA1UEAwwCb2sxLTArBgNVBC0MJGUw
-            NjVmMWI3LTE2OWEtNDE5YS1iNmQyLTc3OWJkOGM4NzIwNjCCASIwDQYJKoZIhvcN
-            AQEBBQADggEPADCCAQoCggEBAK42ixoklDH5K5i1NxXo/AFACDa956pE5RA57wlC
-            BfgUYaIDRmv7TUVJh6zoMZSD6wjSZl3QgP7UTTZeHbvs3QE9HUwEkH1Lo3a8vD3z
-            eqsE2vSnOkpWWnPbfxiQyrTm77/LAWBt7lRLRLdfL6WcucD3wsGqm58sWXM3HG0f
-            SN7PHCZUFqU6MpkHw8DiKmht5hBgWG+Vq3Zw8MNaqpwb/NgST3yYdcZwb58G2FTS
-            ZvDSdUfRmD/mY7TpciYV8EFylXNNFkth8oGNLunR9adgZ+9IunfRKj1a7S5GSwXU
-            AZDaojw+8k5i3ikztsWH11wAVCiLj/3euIqq95z8xGycnKcCAwEAATANBgkqhkiG
-            9w0BAQsFAAOCAQEAWMvcaozgBrZ/MAxzTJmp5gZyLxmMNV6iT9dcqbwzDtDtBvA/
-            46ux6ytAQ+A7Bd3AubvozwCr1Id6g66ae0blWYRRZmF8fDdX/SBjIUkv7u9A3NVQ
-            XN9gsEvK9pdpfN4ZiflfGSLdhM1STHycLmhG6H5s7HklbukMRhQi+ejbSzm/wiw1
-            ipcxuKhSUIVNkTLusN5b+HE2gwF1fn0K0z5jWABy08huLgbaEKXJEx5/FKLZGJga
-            fpIzAdf25kMTu3gggseaAmzyX3AtT1i8A8nqYfe8fnnVMkvud89kq5jErv/hlMC9
-            49g5yWQR2jilYYM3j9BHDuB+Rs+YS5BCep1JnQ==
-            -----END CERTIFICATE-----"""
-        ],
+    single_logout_service_post_response_url: AnyHttpUrl | None = Field(
+        default=None,
+        description="URL where the IdP expects the POST `<LogoutResponse>`, if it differs from `single_logout_service_post_url`.",
+        title="SLO POST response URL",
+        examples=["https://idp.example.com/slo/post-response"],
     )
 
 

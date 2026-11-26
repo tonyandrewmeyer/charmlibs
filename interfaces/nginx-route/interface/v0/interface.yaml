@@ -1,17 +1,27 @@
 name: nginx-route
 version: 0
-status: draft
+status: published
 lib: charms.nginx_ingress_integrator.nginx_route
 summary: Create an Nginx ingress resource in a Kubernetes cluster.
 description: |
-  The `nginx_route` interface allows charms to request the creation of an Nginx ingress resource in the Kubernetes cluster.
-  The requirer charm supplies the configuration for the ingress resources.
-  The provider charm creates the resource as requested.
+  The `nginx-route` interface allows charms to request the creation of an Nginx ingress resource in the Kubernetes cluster.
+  The requirer charm supplies the configuration for the ingress resource, using the same option names as the Nginx Ingress Integrator charm's configuration.
+  The provider charm creates the resource as requested, and does not send anything back.
 
 providers:
-  - name: nginx-route-integrator
+  - name: nginx-ingress-integrator
     url: https://github.com/canonical/nginx-ingress-integrator-operator
+  - name: content-cache-k8s
+    url: https://github.com/canonical/content-cache-k8s-operator
 
-requirers: []
+requirers:
+  - name: content-cache-k8s
+    url: https://github.com/canonical/content-cache-k8s-operator
+  - name: discourse-k8s
+    url: https://github.com/canonical/discourse-k8s-operator
+  - name: synapse
+    url: https://github.com/canonical/synapse-operator
+  - name: wordpress-k8s
+    url: https://github.com/canonical/wordpress-k8s-operator
 
 maintainer: platform-engineering

@@ -2,23 +2,29 @@
 # See LICENSE file for licensing details.
 """This file defines the schema for the provider side of the milter interface.
 
-Examples:
-    Provider:
-        app: <empty>
-        unit:
-          port: 8892
+It defines one model, `ProviderUnitData`.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ProviderUnitData(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            'examples': [
+                {
+                    'port': '8892',
+                },
+            ]
+        }
+    )
+
     port: int = Field(
         ge=1,
         le=65536,
-        description="Milter port.",
-        title="Port",
-        examples=[8892, 8893],
+        description="The TCP port that the milter listens on, on this unit's ingress address.",
+        title='Port',
+        examples=['8892', '8893'],
     )
 
 

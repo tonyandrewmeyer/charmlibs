@@ -2,18 +2,17 @@ name: milter
 summary: Provide or consume a mail filter.
 description: |
   The `milter` interface allows charms to connect to a charm serving as a mail filter (milter).
-  The provider charm shares the information needed to connect.
+  Each provider unit shares the port that its milter listens on, and the requirer combines it with that unit's address to connect.
 
 version: 0
 status: published
 
 providers:
   - name: opendkim
-    url: https://github.com/canonical/opendkim-operator
+    url: https://github.com/canonical/mailserver-operators/tree/main/opendkim-operator
 
 requirers:
   - name: postfix-relay
-    url: https://github.com/canonical/postfix-relay-operator
-
+    url: https://github.com/canonical/mailserver-operators/tree/main/postfix-relay-operator
 
 maintainer: platform-engineering

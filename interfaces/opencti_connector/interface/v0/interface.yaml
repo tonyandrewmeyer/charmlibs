@@ -2,58 +2,60 @@ name: opencti_connector
 version: 0
 status: published
 lib: charms.opencti.opencti_connector
-summary: Connect a single OpenCTI provider to one or more OpenCTI connectors.
+summary: Connect OpenCTI connectors to an OpenCTI instance.
 description: |
-  The `opencti_connector` interface supports connecting an OpenCTI provider charm to one or more OpenCTI connectors.
-  The provider charm specifies the expected connector type for each connector relation.
-  Each requirer charm shares its OpenCTI URL (and token) for the provider to connect to.
+  The `opencti_connector` interface connects OpenCTI connector charms to an OpenCTI charm.
+  Each provider is a connector, and shares its name and connector type.
+  The requirer is OpenCTI, which creates an OpenCTI user for each connector and shares the OpenCTI URL and a Juju secret with that user's API token.
 
 providers:
-  - name: abseipdb_ipblacklist
+  - name: opencti-abuseipdb-ipblacklist-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/abuseipdb_ipblacklist
-  - name: alienvault
+  - name: opencti-alienvault-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/alienvault
-  - name: cisa_kev
+  - name: opencti-cisa-kev-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/cisa_kev
-  - name: crowdstrike
+  - name: opencti-crowdstrike-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/crowdstrike
-  - name: cyber_campaign
+  - name: opencti-cyber-campaign-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/cyber_campaign
-  - name: export_file_csv
+  - name: opencti-export-file-csv-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/export_file_csv
-  - name: export_file_txt
-    url: https://github.com/canonical/opencti-operator/tree/main/connectors/export_file_txt
-  - name: export_file_stix
+  - name: opencti-export-file-stix-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/export_file_stix
-  - name: import_document
+  - name: opencti-export-file-txt-connector
+    url: https://github.com/canonical/opencti-operator/tree/main/connectors/export_file_txt
+  - name: opencti-import-document-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/import_document
-  - name: import_file_stix
+  - name: opencti-import-file-stix-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/import_file_stix
-  - name: ipinfo
+  - name: opencti-ipinfo-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/ipinfo
-  - name: malwarebazaar
+  - name: opencti-malwarebazaar-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/malwarebazaar
-  - name: misp_feed
+  - name: opencti-misp-feed-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/misp_feed
-  - name: mitre
+  - name: opencti-mitre-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/mitre
-  - name: sekoia
+  - name: opencti-nti-connector
+    url: https://github.com/canonical/opencti-operator/tree/main/connectors/nti
+  - name: opencti-sekoia-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/sekoia
-  - name: urlhaus
+  - name: opencti-urlhaus-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/urlhaus
-  - name: urlscan
+  - name: opencti-urlscan-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/urlscan
-  - name: urlscan_enrichment
+  - name: opencti-urlscan-enrichment-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/urlscan_enrichment
-  - name: virustotal_livehunt
+  - name: opencti-virustotal-livehunt-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/virustotal_livehunt
-  - name: vxvault
+  - name: opencti-vxvault-connector
     url: https://github.com/canonical/opencti-operator/tree/main/connectors/vxvault
+  - name: wazuh-server
+    url: https://github.com/canonical/wazuh-server-operator
 
 requirers:
   - name: opencti
-    url: https://www.github.com/canonical/opencti-operator
-
+    url: https://github.com/canonical/opencti-operator
 
 maintainer: platform-engineering
-

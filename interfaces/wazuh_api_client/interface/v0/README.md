@@ -1,48 +1,19 @@
-# `wazuh_api_client/v0`
-
-## Usage
-
-This relation interface describes the expected behaviour of any charm interfacing with the Wazuh Server charm, such as the [Wazuh Server Operator](https://github.com/canonical/wazuh-server-operator) using the `wazuh-api-client` relation.
-
-## Direction
-
-```mermaid
-flowchart TD
-    Provider -- index, \nendpoints, \nsecret-user --> Requirer
-```
-
-As with all Juju relations, the `wazuh-api-client` interface consists of two parties: a Provider (Wazuh server charm), and a Requirer (application charm). The Provider will provide API credentials, which can be used to access the Wazuh REST API itself.
+# wazuh_api_client
 
 ## Behavior
 
-Both the Requirer and the Provider need to adhere to criteria to be considered compatible with the interface.
-
-Sensitive information is transmitted through Juju Secrets rather than directly through the relation data bag(s). Corresponding pieces of information are grouped together in a single secret.
+Keywords are as in RFC 2119.
 
 ### Provider
-- Is expected to provide credentials (`username` and `password`) in a Juju Secret.
-- Is expected to expose the Juju Secrets URI to the credentials through the `secret-user` field of the data bag.
-- Is expected to provide the `endpoints` field containing all cluster endpoint addresses in a comma-separated list.
+
+- MUST write the application databag from the leader unit.
+- MUST put the API credentials in a Juju secret that it owns, with the user under the `user` key and the password under the `password` key, and MUST NOT put them in the databag.
+- MUST grant that secret to the relation.
+- MUST update the secret's content when the credentials change, and MUST update the databag when the endpoint changes.
 
 ### Requirer
 
-The requirer isn't expected to provide any data.
-
-## Relation Data
-
-[\[Pydantic Schema\]](./schema.py)
-
-### Provider
-
-Provider provides credentials and endpoint addresses fields in the **application** databag.
-
-
-#### Example
-```yaml
-  relation-info:
-  - endpoint: wazuh-api-client
-    related-endpoint:  wazuh-api-consumer
-    application-data:
-      endpoints: 10.180.162.200:55000,10.180.162.75:55000
-      secret-user: secret://59060ecc-0495-4a80-8006-5f1fc13fd783/cjqub6vubg2s77p3nio0
-```
+- MUST NOT write to either databag.
+- SHOULD treat the relation as not ready until both fields are set, the endpoint is a valid URL, and the secret can be read and has non-empty `user` and `password` values.
+- MUST read the user and password from the same revision of the secret.
+- SHOULD observe `secret-changed` for that secret and use the latest revision, since rotating the credentials doesn't change the databag.

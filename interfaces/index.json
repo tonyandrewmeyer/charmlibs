@@ -61,12 +61,12 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/cloudflared_route/",
     "summary": "Configure a cloudflared tunnel.",
-    "description": "The `cloudflared_route` interface allows information to be exchanged between the cloudflared tunnel configurator charm and the cloudflared tunnel charm.",
+    "description": "The `cloudflared-route` interface allows a charm that holds the configuration for a cloudflared tunnel to pass it to a charm that runs the tunnel.\nThe provider charm shares the tunnel token, in a Juju secret, and optionally a DNS nameserver for the tunnel to use.",
     "tags": [
       "ingress",
       "networking"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "connect_client",
@@ -112,14 +112,14 @@
   {
     "name": "dns_record",
     "version": "0",
-    "lib": "",
+    "lib": "charms.bind.dns_record",
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/dns_record/",
     "summary": "Create and manage DNS records.",
-    "description": "",
+    "description": "The `dns_record` interface allows charms to request the creation of DNS records.\nThe requirer charm specifies the records, and the provider charm is responsible for creating and managing them and reports the status of each request.\nA provider can also allocate a domain for the requirer that resolves to the requirer's addresses.",
     "tags": [],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "etcd_client",
@@ -333,8 +333,8 @@
     "lib_url": "https://charmhub.io/traefik-k8s/libraries/ingress",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/ingress/",
-    "summary": "",
-    "description": "",
+    "summary": "Route external traffic to an application, load-balanced across its units.",
+    "description": "The `ingress` interface lets a charm request ingress for its application.\nThe requirer sends the port to expose and the address of each of its units, and the provider configures an ingress that load-balances across those units and returns the URL at which the application is reachable.",
     "tags": [
       "ingress",
       "networking"
@@ -348,8 +348,8 @@
     "lib_url": "https://charmhub.io/traefik-k8s/libraries/ingress_per_unit",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/ingress_per_unit/",
-    "summary": "",
-    "description": "",
+    "summary": "Request and provide ingress for each unit of an application.",
+    "description": "The `ingress_per_unit` interface allows a charm to request ingress for each of its units separately, rather than for the application as a whole.\nEach requirer unit gives the host and port at which it can be reached, and the provider gives back a URL (or, in TCP mode, a host and port) for each unit.",
     "tags": [
       "ingress",
       "networking"
@@ -545,7 +545,7 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/milter/",
     "summary": "Provide or consume a mail filter.",
-    "description": "The `milter` interface allows charms to connect to a charm serving as a mail filter (milter).\nThe provider charm shares the information needed to connect.",
+    "description": "The `milter` interface allows charms to connect to a charm serving as a mail filter (milter).\nEach provider unit shares the port that its milter listens on, and the requirer combines it with that unit's address to connect.",
     "tags": [],
     "status": "published"
   },
@@ -602,12 +602,12 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/nginx-route/",
     "summary": "Create an Nginx ingress resource in a Kubernetes cluster.",
-    "description": "The `nginx_route` interface allows charms to request the creation of an Nginx ingress resource in the Kubernetes cluster.\nThe requirer charm supplies the configuration for the ingress resources.\nThe provider charm creates the resource as requested.",
+    "description": "The `nginx-route` interface allows charms to request the creation of an Nginx ingress resource in the Kubernetes cluster.\nThe requirer charm supplies the configuration for the ingress resource, using the same option names as the Nginx Ingress Integrator charm's configuration.\nThe provider charm creates the resource as requested, and does not send anything back.",
     "tags": [
       "ingress",
       "networking"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "oauth",
@@ -630,8 +630,8 @@
     "lib_url": "https://charmhub.io/opencti/libraries/opencti_connector",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/opencti_connector/",
-    "summary": "Connect a single OpenCTI provider to one or more OpenCTI connectors.",
-    "description": "The `opencti_connector` interface supports connecting an OpenCTI provider charm to one or more OpenCTI connectors.\nThe provider charm specifies the expected connector type for each connector relation.\nEach requirer charm shares its OpenCTI URL (and token) for the provider to connect to.",
+    "summary": "Connect OpenCTI connectors to an OpenCTI instance.",
+    "description": "The `opencti_connector` interface connects OpenCTI connector charms to an OpenCTI charm.\nEach provider is a connector, and shares its name and connector type.\nThe requirer is OpenCTI, which creates an OpenCTI user for each connector and shares the OpenCTI URL and a Juju secret with that user's API token.",
     "tags": [
       "security"
     ],
@@ -755,7 +755,7 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/saml/",
     "summary": "Authenticate users with SAML.",
-    "description": "The `saml` interface allows charms to connect to a SAML Identity Provider for authenticating users.\nThe provider charm is the SAML Identity Provider, and shares the necessary data with requirer charms (SAML Service Providers).",
+    "description": "The `saml` interface allows charms to connect to a SAML Identity Provider (IdP) for authenticating users.\nThe provider charm represents the IdP, and shares its entity ID, certificates, and single sign-on and single logout endpoints with requirer charms (SAML Service Providers).",
     "tags": [
       "identity-auth"
     ],
@@ -910,14 +910,14 @@
   {
     "name": "wazuh_api_client",
     "version": "0",
-    "lib": "",
+    "lib": "charms.wazuh_server.wazuh_api",
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/wazuh_api_client/",
-    "summary": "The `wazuh_api_client` interface allows charms to connect to a Wazuh server.\nThe provider charm manages access to the server, securely providing credentials and endpoints to the requirer charms.",
-    "description": "Connect to a Wazuh server.",
+    "summary": "Connect to a Wazuh server's REST API.",
+    "description": "The `wazuh_api_client` interface allows charms to connect to the REST API of a Wazuh server.\nThe provider charm manages access to the server, and shares the API endpoint and a Juju secret with the credentials to use.",
     "tags": [],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "zookeeper",
