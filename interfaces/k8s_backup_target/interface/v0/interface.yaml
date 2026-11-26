@@ -2,14 +2,14 @@ name: k8s_backup_target
 version: 0
 status: draft
 lib: charmlibs.interfaces.k8s_backup_target
-summary: Configure Kubernetes backup target specifications.
+summary: Tell a backup charm what Kubernetes data to back up.
 description: |
-  The `k8s_backup_target` interface allows client charms to specify Kubernetes backup requirements to a backup integrator charm.
-  The provider charm (client) provides backup specifications including namespaces, resource types, and retention policies, while the requirer charm (backup integrator) receives these specifications and forwards them to a backup operator.
+  The `k8s_backup_target` interface allows a client charm to tell a backup charm or backup integrator charm what Kubernetes data to back up, without the client needing elevated permissions in the cluster.
+  The provider charm (the client) provides a backup specification, including the namespaces and resource kinds to include or exclude, and the requirer charm (the backup charm or integrator) uses it to have the backup made, or forwards it to a backup operator.
 
 requirers:
-  - name: velero-integrator-operator
-    url: https://github.com/canonical/velero-integrator-operator
+  - name: velero-integrator
+    url: https://github.com/canonical/velero-integrator
 
 providers: []
 
