@@ -1,6 +1,11 @@
 name: spark_service_account
 version: 0
-status: draft
+status: published
+lib: charms.spark_integration_hub_k8s.spark_service_account
+summary: Get a Kubernetes service account that is configured to run Spark jobs.
+description: |
+  The `spark_service_account` interface allows charms that are part of, or work with, the Charmed Apache Spark solution to get a Kubernetes service account for running Spark jobs.
+  The requirer charm asks for a service account, and the provider charm creates it (unless the requirer asks it not to) and shares the Spark properties and Kubernetes resource manifest for it in a Juju secret.
 
 providers:
   - name: spark-integration-hub-k8s
@@ -9,5 +14,9 @@ providers:
 requirers:
   - name: kyuubi-k8s
     url: https://github.com/canonical/kyuubi-k8s-operator
+  - name: data-kubeflow-integrator
+    url: https://github.com/canonical/data-kubeflow-integrator
+  - name: airflow-coordinator-k8s
+    url: https://github.com/canonical/airflow-coordinator-k8s-operator
 
 maintainer: processing
