@@ -799,14 +799,14 @@
   {
     "name": "spark_service_account",
     "version": "0",
-    "lib": "",
+    "lib": "charms.spark_integration_hub_k8s.spark_service_account",
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/spark_service_account/",
-    "summary": "",
-    "description": "",
+    "summary": "Get a Kubernetes service account that is configured to run Spark jobs.",
+    "description": "The `spark_service_account` interface allows charms that are part of, or work with, the Charmed Apache Spark solution to get a Kubernetes service account for running Spark jobs.\nThe requirer charm asks for a service account, and the provider charm creates it (unless the requirer asks it not to) and shares the Spark properties and Kubernetes resource manifest for it in a Juju secret.",
     "tags": [],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "tempo_cluster",
