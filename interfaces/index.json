@@ -516,7 +516,7 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/litmus_auth/",
     "summary": "Exchange gRPC server endpoints for communication between Litmus auth and backend charms.",
-    "description": "The `litmus_auth` interface enables communication between Litmus auth and Litmus backend charms.\nBoth the provider and requirer publish their respective gPRC server's endpoint.",
+    "description": "The `litmus_auth` interface enables communication between the Litmus auth and Litmus backend charms.\nThe provider (the auth server) and the requirer (the backend server) each publish their gRPC server's endpoint, and whether it accepts TLS connections.",
     "tags": [
       "internal",
       "operations"
@@ -684,14 +684,14 @@
   {
     "name": "profiling",
     "version": "0",
-    "lib": "",
+    "lib": "charms.pyroscope_coordinator_k8s.profiling",
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/profiling/",
-    "summary": "",
-    "description": "",
+    "summary": "Expose a profiling ingestion endpoint.",
+    "description": "The `profiling` interface lets an application that ingests profiling data, such as Pyroscope, expose its ingestion endpoint to applications that push profiles to it.\nThe provider is the server (the profile ingester) and the requirer is the source of the profiles.\nThe provider publishes its OTLP gRPC endpoint, and whether it uses TLS; the requirer publishes nothing.",
     "tags": [],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "prometheus_remote_write",
@@ -724,14 +724,17 @@
   {
     "name": "pyroscope_cluster",
     "version": "0",
-    "lib": "",
-    "lib_url": "",
+    "lib": "coordinated-workers",
+    "lib_url": "https://pypi.org/project/coordinated-workers/",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/pyroscope_cluster/",
     "summary": "Pyroscope coordinator and worker charm communication.",
-    "description": "The `pyroscope_cluster` interface supports communication between the [pyroscope-coordinator-k8s](https://charmhub.io/pyroscope-coordinator-k8s) and [pyroscope-worker-k8s](https://charmhub.io/pyroscope-worker-k8s) charms.",
-    "tags": [],
-    "status": "draft"
+    "description": "The `pyroscope_cluster` interface supports communication between the [pyroscope-coordinator-k8s](https://charmhub.io/pyroscope-coordinator-k8s) and [pyroscope-worker-k8s](https://charmhub.io/pyroscope-worker-k8s) charms in a distributed Pyroscope deployment.\nEach worker application publishes its role, and each worker unit its address and topology, so that they can join the cluster.\nThe coordinator replies with the Pyroscope configuration that the workers must run with, and other configuration for the worker charm.",
+    "tags": [
+      "internal",
+      "observability"
+    ],
+    "status": "published"
   },
   {
     "name": "s3",
@@ -818,13 +821,16 @@
   {
     "name": "tempo_cluster",
     "version": "1",
-    "lib": "",
-    "lib_url": "",
+    "lib": "coordinated-workers",
+    "lib_url": "https://pypi.org/project/coordinated-workers/",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/tempo_cluster/",
     "summary": "Tempo coordinator and worker charm communication.",
-    "description": "The `tempo_cluster` interface supports communication between the [tempo-coordinator-k8s](https://charmhub.io/tempo-coordinator-k8s) and [tempo-worker-k8s](https://charmhub.io/tempo-worker-k8s) charms.",
-    "tags": [],
+    "description": "The `tempo_cluster` interface supports communication between the [tempo-coordinator-k8s](https://charmhub.io/tempo-coordinator-k8s) and [tempo-worker-k8s](https://charmhub.io/tempo-worker-k8s) charms in a distributed Tempo deployment.\nEach worker application publishes its role, and each worker unit its address and topology, so that they can join the cluster.\nThe coordinator replies with the Tempo configuration that the workers must run with, and other configuration for the worker charm.",
+    "tags": [
+      "internal",
+      "observability"
+    ],
     "status": "published"
   },
   {
@@ -849,7 +855,7 @@
     "lib_docs_url": "https://canonical.com/juju/docs/charmlibs/reference/charmlibs/interfaces/tracing",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/tracing/",
     "summary": "Request endpoints for pushing trace data.",
-    "description": "The `tracing` interface supports push-based tracing.\nThe requirer publishes the list of protocols it wants to use to send traces.\nThe provider replies with an API URL and an endpoint for each protocol, omitting those it does not support.",
+    "description": "The `tracing` interface supports push-based tracing.\nThe requirer publishes the list of protocols it wants to use to send traces.\nThe provider replies with an endpoint for each requested protocol that it supports, omitting those it does not support.",
     "tags": [
       "observability"
     ],

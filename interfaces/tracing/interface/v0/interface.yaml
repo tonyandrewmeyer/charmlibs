@@ -2,9 +2,15 @@ name: tracing
 
 version: 0
 status: retired
+lib: charms.tempo_k8s.tracing
+summary: Push traces to a tracing backend's ingesters.
+description: |
+  The `tracing` interface supports push-based tracing.
+  The provider publishes its host and, for each protocol it accepts, the port of its ingester; the requirer publishes nothing.
+  Version 1 of the `charms.tempo_k8s.tracing` library implemented this version.
 
 providers: []
 
 requirers: []
 
-maintainer: observability
+maintainer: tracing-and-profiling
