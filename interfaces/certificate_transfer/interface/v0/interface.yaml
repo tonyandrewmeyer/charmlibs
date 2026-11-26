@@ -1,8 +1,25 @@
 name: certificate_transfer
 version: 0
-status: draft
+status: published
+lib: charmlibs.interfaces.certificate_transfer
+summary: Receive public or CA certificates.
+description: |
+  The `certificate_transfer` interface allows charms to receive public certificates, such as CA certificates, to trust.
+  The provider charm shares a certificate, a CA certificate, and a CA chain, and the requirer uses them to authenticate TLS communications.
+  It is not for charms that need certificates for themselves, which use the `tls-certificates` interface.
+  Version 1 replaces this version, and providers use this version only for requirers that don't support version 1.
 
-providers: []
+providers:
+  - name: self-signed-certificates
+    url: https://github.com/canonical/self-signed-certificates-operator
+  - name: lego
+    url: https://github.com/canonical/lego-operator
+  - name: manual-tls-certificates
+    url: https://github.com/canonical/manual-tls-certificates-operator
+  - name: vault-k8s
+    url: https://github.com/canonical/vault-k8s-operator
+  - name: vault
+    url: https://github.com/canonical/vault-k8s-operator
 requirers: []
 
 maintainer: tls

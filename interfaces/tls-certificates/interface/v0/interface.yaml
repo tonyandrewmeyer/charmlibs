@@ -1,12 +1,17 @@
 name: tls-certificates
 version: 0
 status: retired
+summary: Request TLS certificates, with the provider generating the private keys.
+description: |
+  The `tls-certificates` interface allows charms to request and receive TLS certificates.
+  The requirer charm asks for server or client certificates by common name, and the provider charm creates each certificate and its private key, and shares them with the CA certificate.
+  Version 1 replaces this version, so that private keys aren't shared in the relation data.
 
 providers:
   - name: vault
     url: https://www.github.com/openstack/charm-vault
   - name: tls-certificates-operator
-    url: https://www.github.com/canonical/tls-certificates-operator
+    url: https://github.com/canonical/manual-tls-certificates-operator
 
 requirers:
   - name: keystone
