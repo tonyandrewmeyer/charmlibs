@@ -401,8 +401,8 @@
     "lib_url": "https://charmhub.io/mlops-libs/libraries/k8s_service_info",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/k8s-service/",
-    "summary": "",
-    "description": "",
+    "summary": "Share the name and port of a Kubernetes Service.",
+    "description": "The `k8s-service` interface allows a charm to tell another charm how to reach a Kubernetes [Service](https://kubernetes.io/docs/concepts/services-networking/service/).\nThe provider charm shares the name and port of the Service, and the requirer charm connects to it.\nMost charms that use the interface do so with the deprecated `serialized-data-interface` (SDI), which has its own format; new charms use the library.",
     "tags": [
       "networking"
     ],
@@ -487,12 +487,12 @@
     "lib_url": "https://charmhub.io/kubeflow-dashboard/libraries/kubeflow_dashboard_links",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/kubeflow_dashboard_links/",
-    "summary": "",
-    "description": "",
+    "summary": "Add links to the Kubeflow Dashboard.",
+    "description": "The `kubeflow_dashboard_links` interface allows charms to add links to the Kubeflow Dashboard, in the format that the dashboard needs.\nThe requirer charm sends zero or more links, and the provider charm, the dashboard, shows them in its menu, quick links, external links, or documentation.",
     "tags": [
       "operations"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "ldap",

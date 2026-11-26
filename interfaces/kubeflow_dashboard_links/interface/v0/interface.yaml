@@ -2,12 +2,18 @@ name: kubeflow_dashboard_links
 internal: true
 
 version: 0
-status: draft
+status: published
 lib: charms.kubeflow_dashboard.kubeflow_dashboard_links
+summary: Add links to the Kubeflow Dashboard.
+description: |
+  The `kubeflow_dashboard_links` interface allows charms to add links to the Kubeflow Dashboard, in the format that the dashboard needs.
+  The requirer charm sends zero or more links, and the provider charm, the dashboard, shows them in its menu, quick links, external links, or documentation.
 
 providers:
   - name: kubeflow-dashboard
     url: https://github.com/canonical/kubeflow-dashboard-operator
-requirers: []
+requirers:
+  - name: kfp-ui
+    url: https://github.com/canonical/kfp-operators
 
 maintainer: mlops

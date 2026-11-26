@@ -1,49 +1,27 @@
-# `k8s-service/v0`
+# k8s-service
 
-## Usage
+## Formats
 
-This relation interface describes the expected behavior of any charm claiming to be able to provide or consume a Kubernetes Service (k8s service). With K8s Service referring to the [Service abstraction](https://kubernetes.io/docs/concepts/services-networking/service/ ) defined in the Kubernetes API.
+There are two formats on this interface, and they don't work with each other:
 
-> #### ⚠️ SDI Deprecation
-> The vast majority of charms using this interface are currently using serialized-data-interface. However this approach is deprecated and a new library will have to be implemented for any future usage.
+- Most charms use the [serialized-data-interface](https://github.com/canonical/serialized-data-interface) (SDI) package. Each side writes the schema versions it supports to `_supported_versions`, and the provider writes `service-name` and `service-port` in a YAML-encoded `data` field. SDI is deprecated.
+- Newer charms use the `k8s_service_info` library, where the provider writes `name` and `port` directly, and the requirer writes nothing.
 
-## Direction
-The `k8s-service` interface implements a provider/requirer pattern.
-The requirer is a charm that wishes to consume a k8s service, and the provider is a charm able to provide it.
-
-```mermaid
-flowchart TD
-    Provider -- Kubernetes Service --> Requirer
-```
+A charm that only supports one format needs to be integrated with a charm that uses the same one.
 
 ## Behavior
 
-The requirer and the provider need to adhere to a certain set of criteria to be considered compatible with the interface.
+Keywords are as in RFC 2119.
 
 ### Provider
 
-- Is expected to provide `service-name` and `service-port` needed to access the K8s service.
-- Is expected to provide a `service-name` formatted as `<resource-name>.<namespace>`, for example `kfp-api.kubeflow`.
+- MUST write the Service details to the application databag from the leader unit, in one of the two formats.
+- If it uses SDI, MUST write `_supported_versions`, and MUST NOT write `data` until the requirer's `_supported_versions` has a version in common with it.
+- SHOULD set the Service name to a name that the requirer can resolve, such as `<name>.<namespace>`, for example `kfp-api.kubeflow`.
+- MUST update the databag when the Service details change.
 
 ### Requirer
 
-- Is expected to consume the data provided.
-
-## Relation Data
-
-### Provider
-
-[\[JSON Schema\]](./schemas/provider.json)
-
-Exposes a `url` field containing the url at which ingress is available. Should be placed in the **application** databag, encoded as yaml and nested in a "data" field.
-
-#### Example
-
-```yaml
-application_data:
-  service-name: "kfp-api.kubeflow"
-  service-port: "8888"
-```
-
-### Requirer
-N/A
+- If it uses SDI, MUST write `_supported_versions` to the application databag from the leader unit. Otherwise, MUST NOT write to either databag.
+- SHOULD treat the relation as not ready until the provider's Service details are in the databag.
+- SHOULD use the latest Service details when the provider changes them.
