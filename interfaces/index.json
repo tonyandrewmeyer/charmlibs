@@ -580,7 +580,7 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/mysql_client/",
     "summary": "Access MySQL databases with unique credentials.",
-    "description": "The `mysql_client` interface allows charms to access MySQL databases with unique, relation-specific credentials transmitted via Juju Secrets.\nThe provider charm creates database users and provides connection details, while the requirer charm requests a database name and optional custom entities with specific role permissions.",
+    "description": "The `mysql_client` interface allows charms to access MySQL databases with unique, relation-specific credentials transmitted via Juju Secrets.\nThe provider charm creates a database and a database user and provides connection details, while the requirer charm requests a database name, and optionally extra roles or a custom entity.\nIt follows the same pattern as the other `<database>_client` interfaces, such as `postgresql_client` and `mongodb_client`.",
     "tags": [
       "data",
       "identity-auth"

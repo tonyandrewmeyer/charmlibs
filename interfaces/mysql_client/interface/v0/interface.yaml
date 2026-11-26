@@ -5,13 +5,25 @@ lib: charms.data_platform_libs.data_interfaces
 summary: Access MySQL databases with unique credentials.
 description: |
   The `mysql_client` interface allows charms to access MySQL databases with unique, relation-specific credentials transmitted via Juju Secrets.
-  The provider charm creates database users and provides connection details, while the requirer charm requests a database name and optional custom entities with specific role permissions.
+  The provider charm creates a database and a database user and provides connection details, while the requirer charm requests a database name, and optionally extra roles or a custom entity.
+  It follows the same pattern as the other `<database>_client` interfaces, such as `postgresql_client` and `mongodb_client`.
 
 providers:
-  - name: mysql-operator
-    url: https://www.github.com/canonical/mysql-operator
-  - name: mysql-k8s-operator
-    url: https://www.github.com/canonical/mysql-k8s-operator
-requirers: []
+  - name: mysql
+    url: https://github.com/canonical/mysql-operators/tree/main/machines
+  - name: mysql-k8s
+    url: https://github.com/canonical/mysql-operators/tree/main/kubernetes
+  - name: mysql-router
+    url: https://github.com/canonical/mysql-router-operators/tree/main/machines
+  - name: mysql-router-k8s
+    url: https://github.com/canonical/mysql-router-operators/tree/main/kubernetes
 
-maintainer: data-platform-mysql
+requirers:
+  - name: mysql-router
+    url: https://github.com/canonical/mysql-router-operators/tree/main/machines
+  - name: mysql-router-k8s
+    url: https://github.com/canonical/mysql-router-operators/tree/main/kubernetes
+  - name: data-integrator
+    url: https://github.com/canonical/data-integrator
+
+maintainer: data-mysql

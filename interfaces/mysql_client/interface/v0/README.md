@@ -1,90 +1,37 @@
-# `mysql_client/v0`
-
-## Usage
-
-This relation interface describes the expected behaviour of any charm claiming to be able to interact with a MySQL database.
-Our intent to have different interface names with `<database>_client` pattern (like `mongodb_client`) and the same validation rules for multiple databases (e.g. MySQL, PostgreSQL, MongoDB, etc).
-
-In most cases, this will be accomplished using the [data_interfaces library](https://github.com/canonical/data-platform-libs/blob/main/lib/charms/data_platform_libs/v0/data_interfaces.py), although charm developers are free to provide alternative libraries as long as they fulfil the behavioural and schematic requirements described in this document.
-
-## Direction
-
-```mermaid
-flowchart TD
-    Requirer -- database, \nextra-user-roles, \nrequested-secrets --> Provider
-    Provider -- database, \nendpoints, \nsecret-user --> Requirer
-```
-
-As with all Juju relations, the `database` interface consists of two parties: a Provider (database charm), and a Requirer (application charm). The Requirer will be expected to provide a database name, and the Provider will provide new unique credentials (along with other optional fields), which can be used to access the actual database cluster.
+# mysql_client
 
 ## Behavior
 
-Both the Requirer and the Provider need to adhere to criteria to be considered compatible with the interface.
+Keywords are as in RFC 2119.
 
-If both sides support Juju Secrets, sensitive information is transmitted through Juju Secrets rather than directly through the relation data bag(s). Corresponding pieces of information are grouped together in a single secret.
-If any side, Provider or Requirer doesn't support Juju Secrets, sensitive information is transmitted through the relational data bag in the same fields as in Juju Secret.
-
-### Provider
-- Is expected to create an application user inside the database cluster when the requirer provides the `database` field.
-- Is expected to provide relation user credentials (`username` and `password`) in a Juju Secret whenever the Requirer supplies the `database` field, but not the `entity-type` one.
-- Is expected to provide custom entity credentials (`entity-name` and `entity-password`) in a Juju Secret whenever the Requirer supplies both the `database` and `entity-type` fields.
-- Is expected to expose the Juju Secrets URI to the credentials through the `secret-user` field of the data bag.
-- Is expected to provide the `endpoints` field with the address of Primary, which can be used for Read/Write queries.
-- Is expected to provide the `database` field with the database that was actually created.
-- Is expected to provide the `uris` field with the connection string, in mysqlshell's URI format, which can be used for direct connection to the db.
-- Is expected to provide the `read-only-uris` field with the connection string when requested as a secret field, in mysqlshell's URI format, which can be used for direct connection to a read only edpoint of a cluster.
-- Is expected to provide optional `read-only-endpoints` field with a comma-separated list of hosts or one Kubernetes Service, which can be used for Read-only queries.
-- Is expected to provide the `version` field whenever database charm wants to communicate its database version.
-- Is expected to provide the CA chain in the `tls-ca` field of a Juju Secret, whenever the provider has TLS enabled (such as using the [TLS Certificates Operator](https://github.com/canonical/tls-certificates-operator)).
-- Is expected to share the TLS Juju Secret URI through the `secret-tls` field of the databag.
-- If the Requirer asks for additional secrets (via `requested-secrets`, see below) other than those stored in the `user` and `tls` secrets, Provider is expected to define a `secret-extra` field holding the URI of the Juju Secret containing all additional secret fields.
-
-### Requirer
-
-- Is expected to provide `requested-secrets`, which is a list of field names that are not to be exposed on the relation databag, but handled within Juju Secrets. It should be JSON parsable array of strings, and correspond to valid Juju Secret keys (i.e. alphanumerical characters with a potential '-' (dash) character). Secret fields must contain `username` and `password` (and `tls-ca` in case TLS is enabled).
-- Is expected to provide a database name in the `database` field.
-- Is expected to have unique credentials for each relation. Therefore, different instances of the same Charm (juju applications) will have different relations with different credentials.
-- Is expected to have different relations names on Requirer with the same interface name if Requirer needs access to multiple database charms.
-- Is expected to allow multiple different Juju applications to access the same database name.
-- Can optionally add any `extra-user-roles` provided by the Requirer to the requested user or relation user (e.g. `extra-user-roles=admin`).
-- Can optionally add any `extra-group-roles` provided by the Requirer to the requested group (e.g. `extra-group-roles=admin`).
-- Can optionally add field `entity-type` provided by the Requirer to the created a custom entity, instead of a database.
-- Can optionally add field `entity-permissions` provided by the Requirer to tweak custom entity permissions.
-- Is expected to tolerate that the Provider may ignore the `database` field in some cases and instead use the database name received.
-
-## Relation Data
-
-[\[Pydantic Schema\]](./schema.py)
+If both sides support Juju secrets, sensitive fields are sent in Juju secrets rather than in the databag, with related fields grouped together in one secret. If either side doesn't support Juju secrets, the provider writes those fields in the databag, under the same names as in the secret.
 
 ### Provider
 
-Provider provides credentials, endpoints, TLS info and database-specific fields. It should be placed in the **application** databag.
-
-
-#### Example
-```yaml
-  relation-info:
-  - endpoint: database
-    related-endpoint: database
-    application-data:
-      database: myappB
-      endpoints: mysql-k8s-primary:5432
-      read-only-endpoints: mysql-k8s-replicas:5432
-      secret-user: secret://59060ecc-0495-4a80-8006-5f1fc13fd783/cjqub6vubg2s77p3nio0
-      secret-tls: secret://59060ecc-0495-4a80-8006-5f1fc13fd783/cjqub7fubg2s77p3niog
-```
+- MUST write to the application databag from the leader unit.
+- MUST create a relation user in the database cluster when the requirer writes `database`.
+- Unless the requirer asks for the `charmed_router` role, MUST create the requested database and write `database` with the name of the database that was actually created.
+- Unless the requirer writes `entity-type`, MUST put the relation user's credentials (`username` and `password`) in a Juju secret, write the secret's ID to `secret-user`, and grant the secret to the relation.
+- If it supports custom entities and the requirer writes `entity-type`, MUST put the custom entity's credentials (`entity-name`, and `entity-password` if there is one) in a Juju secret, write the secret's ID to `secret-entity`, and grant the secret to the relation.
+- MUST write `endpoints`, the address of the primary, which can be used for read/write queries.
+- SHOULD write `read-only-endpoints`, the addresses that can be used for read-only queries.
+- MAY write `uris` and `read-only-uris`, connection strings in MySQL Shell's URI format that can be used to connect directly to the primary and to a read-only endpoint. If the requirer lists them in `requested-secrets`, they go in the same secret as the credentials.
+- MAY write `version`, the version of the database engine.
+- When TLS is enabled (such as with the [TLS Certificates Operator](https://github.com/canonical/tls-certificates-operator)), SHOULD put the CA chain in `tls-ca`, and `True` in `tls`, in a Juju secret, and write the secret's ID to `secret-tls`.
+- If the requirer lists fields in `requested-secrets` other than those in the user, entity, and TLS secrets, MUST put those fields in another Juju secret and write its ID to `secret-extra`.
+- MUST add the roles in `extra-user-roles` to the relation user. If it doesn't support a requested role, MUST NOT create the user, and SHOULD set a blocked status. When there are extra roles, MAY give the relation user only those roles, rather than privileges on the requested database.
+- If it supports the `charmed_router` role and the requirer asks for it, MUST give the relation user the privileges that MySQL Router needs to create databases and users for its own requirers. It doesn't need to create the requested database or write `database`.
+- MUST allow more than one application to use the same database name.
+- SHOULD remove the relation user when the relation is removed.
+- MAY make the endpoints reachable only from inside its own network (MySQL Router on machines only offers Unix sockets), unless the requirer sets `external-node-connectivity` to `true`.
 
 ### Requirer
 
-Requirer provides database name. It should be placed in the **application** databag.
-
-#### Example
-
-```yaml
-  relation-info:
-  - endpoint: database
-    related-endpoint: database
-    application-data:
-      database: myappA
-    requested-secrets: ["username", "password", "tls-ca", "uris"]
-```
+- MUST write `requested-secrets`, a JSON array of the names of the fields that the provider should put in Juju secrets rather than in the databag. The names MUST be valid Juju secret keys (alphanumeric characters and dashes), and MUST include `username` and `password` (and `tls-ca` when TLS is enabled).
+- MUST write the name of the database it wants in `database`.
+- MUST use a different relation endpoint, with the same interface, for each database charm that it needs access to. Credentials belong to a relation, so different applications, even of the same charm, get different credentials.
+- MAY write `extra-user-roles`, roles that the provider adds to the relation user. MySQL Router asks for `charmed_router`.
+- MAY write `extra-group-roles`, roles that the provider adds to the requested group.
+- MAY write `entity-type` to ask for a custom entity instead of a relation user, and `entity-permissions` to set that entity's permissions.
+- MAY set `external-node-connectivity` to `true` if it connects from outside the provider's network.
+- MUST tolerate the provider ignoring the requested `database` in some cases, and MUST use the database name that the provider writes.
