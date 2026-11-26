@@ -134,7 +134,7 @@
       "data",
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "filesystem_info",
@@ -567,12 +567,12 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/mongodb_client/",
     "summary": "Access MongoDB databases with unique credentials.",
-    "description": "The `mongodb_client` interface allows charms to access MongoDB databases with unique, relation-specific credentials transmitted via Juju Secrets.\nThe provider charm creates database users and provides connection details, while the requirer charm requests a database name and optional custom entities with specific role permissions.",
+    "description": "The `mongodb_client` interface allows charms to access MongoDB databases with unique, relation-specific credentials transmitted via Juju Secrets.\nThe provider charm creates database users and provides connection details, while the requirer charm requests a database name and optional custom entities with specific role permissions.\nIt follows the same pattern as the other `<database>_client` interfaces, such as `postgresql_client` and `mysql_client`.",
     "tags": [
       "data",
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "mysql_client",
@@ -654,12 +654,12 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/opensearch_client/",
     "summary": "Access OpenSearch and ElasticSearch clusters.",
-    "description": "The `opensearch_client` interface allows charms to access OpenSearch and ElasticSearch clusters with user-specific credentials and index permissions transmitted via Juju Secrets.\nThe provider charm creates users and manages index access controls, while the requirer charm requests access to specific indices with optional role permissions.",
+    "description": "The `opensearch_client` interface allows charms to access OpenSearch and ElasticSearch clusters with user-specific credentials and index permissions transmitted via Juju Secrets.\nThe provider charm creates users and manages index access controls, while the requirer charm requests access to specific indices with optional role permissions.\nIt's likely to suit any application that uses the ElasticSearch API.",
     "tags": [
       "data",
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "postgresql_client",
@@ -858,7 +858,7 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/valkey_client/",
     "summary": "Access Valkey databases with credentials and TLS configuration.",
-    "description": "The `valkey_client` interface allows charms to access Valkey databases with user-specific credentials and TLS configuration.\nThe provider charm creates Valkey users and permissions based on requirer requests, while the requirer charm shares the desired key access prefix.",
+    "description": "The `valkey_client` interface allows charms to access Valkey databases with user-specific credentials and TLS configuration.\nThe provider charm creates Valkey users and permissions based on requirer requests, while the requirer charm shares the keys and Pub/Sub channels it wants to access.",
     "tags": [
       "data"
     ],
