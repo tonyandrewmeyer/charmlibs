@@ -90,8 +90,8 @@
     "lib_url": "https://charmhub.io/grafana-agent/libraries/cos_agent",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/cos_agent/",
-    "summary": "Machine-charm-specific interface for managing multiple observability-related data streams.",
-    "description": "The `cos_agent` interface allows machine charms to send telemetry \u2014 such as metrics, logs, dashboards, and alert rules \u2014 to Opentelemetry Colector or Grafana Agent charms.\n\nThis interface is designed specifically for machine charms, where the requirer is typically the [grafana-agent](https://charmhub.io/grafana-agent) and the [opentelemetry-collector](https://github.com/canonical/opentelemetry-collector-operator/) subordinate charms.",
+    "summary": "Send several kinds of telemetry from a machine charm to a subordinate telemetry agent.",
+    "description": "The `cos_agent` interface allows machine charms to send telemetry, such as metrics, logs, dashboards, and alert rules, to the [opentelemetry-collector](https://charmhub.io/opentelemetry-collector) or [grafana-agent](https://charmhub.io/grafana-agent) subordinate charms, over a single relation.\nThe provider is the principal charm, and describes what to scrape, which snap log slots to read, and its alert rules and dashboards.\nThe requirer is the subordinate charm, which forwards all of that to COS, and replies with the tracing receivers that the provider requested.",
     "tags": [
       "observability"
     ],
@@ -276,7 +276,7 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/grafana_auth/",
     "summary": "Provide authentication configuration for Grafana.",
-    "description": "The `grafana_auth` interface supports configuring Grafana authentication.\nThe provider sends the authentication mode and its configuration.\nThe requirer configures authentication with Grafana and replies with its publicly reachable URL.",
+    "description": "The `grafana_auth` interface supports configuring Grafana authentication.\nThe provider sends the authentication mode and its configuration.\nThe requirer configures authentication with Grafana and replies with the URLs at which Grafana can be reached.",
     "tags": [
       "identity-auth",
       "observability"
@@ -290,8 +290,8 @@
     "lib_url": "https://charmhub.io/grafana-k8s/libraries/grafana_source",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/grafana_datasource/",
-    "summary": "Provide Grafana data source servers.",
-    "description": "The `grafana_source` interface supports exposing servers implementing the Grafana source HTTP API.\nThe provider publishes the endpoint URL for the servers, one per unit.\nThe requirer replies with unique IDs for the Grafana application and a mapping of unique IDs for the units.",
+    "summary": "Provide Grafana datasources.",
+    "description": "The `grafana_datasource` interface supports adding servers that Grafana can query as datasources, such as Prometheus, Loki, or Tempo.\nThe provider publishes the type of the datasource, and the URL of each unit's server, a single URL for the whole application, or both.\nThe requirer adds the datasources to Grafana, and replies with a unique ID for the Grafana application and the UIDs of the datasources, which the provider can share with other charms for correlation.",
     "tags": [
       "observability"
     ],
@@ -305,12 +305,12 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/grafana_datasource_exchange/",
     "summary": "Share UIDs for Grafana datasources between charms.",
-    "description": "The `grafana_datasource_exchange` interface allows charms that generate telemetry and have a reference to the datasources where said telemetry is queriable, to share those references to other charms for correlation and cross-referencing purposes.\n\nThis is a symmetrical relation, where implementers broadcast the same information regardless of whether they are the provider or requirer.\nTo avoid constraints on integration topology, charms should implement both a requirer and provider endpoint for this interface.",
+    "description": "The `grafana_datasource_exchange` interface allows charms that generate telemetry and have a reference to the datasources where said telemetry is queriable, to share those references with other charms for correlation and cross-referencing purposes.\n\nThis is a symmetrical relation, where implementers send the same information whether they are the provider or the requirer.\nThe datasource UIDs come from Grafana, over the `grafana_datasource` interface.",
     "tags": [
       "internal",
       "observability"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "hydra_endpoints",
@@ -552,14 +552,17 @@
   {
     "name": "mimir_cluster",
     "version": "0",
-    "lib": "",
-    "lib_url": "",
+    "lib": "coordinated-workers",
+    "lib_url": "https://pypi.org/project/coordinated-workers/",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/mimir_cluster/",
     "summary": "Mimir coordinator and worker charm communication.",
-    "description": "The `mimir_cluster` interface supports communication between the [mimir-coordinator-k8s](https://charmhub.io/mimir-coordinator-k8s) and [mimir-worker-k8s](https://charmhub.io/mimir-worker-k8s) charms.",
-    "tags": [],
-    "status": "draft"
+    "description": "The `mimir_cluster` interface supports communication between the [mimir-coordinator-k8s](https://charmhub.io/mimir-coordinator-k8s) and [mimir-worker-k8s](https://charmhub.io/mimir-worker-k8s) charms in a distributed Mimir deployment.\nEach worker application publishes its roles, and each worker unit its address and topology, so that they can join the cluster.\nThe coordinator replies with the Mimir configuration that the workers must run with, and other configuration for the worker charm.",
+    "tags": [
+      "internal",
+      "observability"
+    ],
+    "status": "published"
   },
   {
     "name": "mongodb_client",

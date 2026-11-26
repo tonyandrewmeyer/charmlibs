@@ -1,22 +1,25 @@
 name: grafana_datasource_exchange
 internal: true
 version: 0
-status: draft
+status: published
 lib: cosl
 summary: Share UIDs for Grafana datasources between charms.
 description: |
-  The `grafana_datasource_exchange` interface allows charms that generate telemetry and have a reference to the datasources where said telemetry is queriable, to share those references to other charms for correlation and cross-referencing purposes.
+  The `grafana_datasource_exchange` interface allows charms that generate telemetry and have a reference to the datasources where said telemetry is queriable, to share those references with other charms for correlation and cross-referencing purposes.
 
-  This is a symmetrical relation, where implementers broadcast the same information regardless of whether they are the provider or requirer.
-  To avoid constraints on integration topology, charms should implement both a requirer and provider endpoint for this interface.
+  This is a symmetrical relation, where implementers send the same information whether they are the provider or the requirer.
+  The datasource UIDs come from Grafana, over the `grafana_datasource` interface.
 
 providers:
-  - name: tempo-coordinator-k8s
-    url: https://github.com/canonical/tempo-coordinator-k8s-operator
+  - name: loki-k8s
+    url: https://github.com/canonical/loki-k8s-operator
+  - name: prometheus-k8s
+    url: https://github.com/canonical/prometheus-k8s-operator
+  - name: mimir-coordinator-k8s
+    url: https://github.com/canonical/mimir-operators
 
 requirers:
   - name: tempo-coordinator-k8s
-    url: https://github.com/canonical/tempo-coordinator-k8s-operator
-
+    url: https://github.com/canonical/tempo-operators
 
 maintainer: observability
