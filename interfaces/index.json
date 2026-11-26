@@ -144,11 +144,11 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/filesystem_info/",
     "summary": "Export mount information about shared filesystems.",
-    "description": "The `filesystem_info` interface allows charms that export shared filesystems to expose the required mount information.\nThe provider charm exports mount information for the requirer charm.",
+    "description": "The `filesystem_info` interface allows charms that export shared filesystems to expose the information needed to mount them.\nThe provider charm exports the mount information for a shared filesystem as an endpoint URI, and the requirer charm uses it to mount the filesystem.",
     "tags": [
       "data"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "fiveg_core_gnb",

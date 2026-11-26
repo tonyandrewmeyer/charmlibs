@@ -1,22 +1,24 @@
 name: filesystem_info
 version: 0
-status: draft
+status: published
 lib: charms.filesystem_client.filesystem_info
 summary: Export mount information about shared filesystems.
 description: |
-  The `filesystem_info` interface allows charms that export shared filesystems to expose the required mount information.
-  The provider charm exports mount information for the requirer charm.
+  The `filesystem_info` interface allows charms that export shared filesystems to expose the information needed to mount them.
+  The provider charm exports the mount information for a shared filesystem as an endpoint URI, and the requirer charm uses it to mount the filesystem.
 
 # TODO: the charms live in a monorepo which needs additional setup steps to be able to run tests.
 
 providers:
   - name: nfs-server-proxy
-    url: https://github.com/charmed-hpc/filesystem-charms
+    url: https://github.com/canonical/filesystem-charms
   - name: cephfs-server-proxy
-    url: https://github.com/charmed-hpc/filesystem-charms
+    url: https://github.com/canonical/filesystem-charms
+  - name: lustre-server-proxy
+    url: https://github.com/canonical/filesystem-charms
 
 requirers:
   - name: filesystem-client
-    url: https://github.com/charmed-hpc/filesystem-charms
+    url: https://github.com/canonical/filesystem-charms
 
 maintainer: hpc-team

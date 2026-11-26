@@ -1,26 +1,30 @@
-# `filesystem_info/v0`
-
-## Usage
-
-This interface defines how a charm that exports a shared filesystem can expose the required mount information
-to a client charm that wants to mount the filesystem.
-
-## Direction
-
-The `filesystem_info` interface implements a provider/requirer pattern. The Requirer is a charm that wishes to
-mount a shared filesystem, and the Provider is the charm exporting the mount information to do that.
-
-```mermaid
-flowchart TD
-  Requirer --> Provider
-  Provider -- endpoint --> Requirer
-```
+# filesystem_info
 
 ## Behavior
 
-The exported endpoint from the Provider needs to adhere to a sublanguage of the URI grammar, which is specified
-by [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#appendix-A). The specific sublanguage is defined
-by the following grammar in Augmented Backus–Naur form:
+Keywords are as in RFC 2119.
+
+### Provider
+
+- MUST write the `endpoint` to the application databag from the leader unit.
+- MUST write an `endpoint` that follows the grammar and the requirements in "Endpoint format".
+- MUST export mount information for a valid and accessible shared filesystem.
+- MUST provide sensitive data as a Juju secret where possible. Only charms that cannot create secrets MAY provide their sensitive data as plain text.
+- If the `endpoint` has the ID of a Juju secret, MUST grant that secret to the relation.
+- MUST update the `endpoint` when the mount information changes.
+
+### Requirer
+
+- MUST NOT write to either databag.
+- MUST be able to parse the `endpoint` according to the grammar in "Endpoint format".
+- MUST either support mounting the provider's exported filesystem, or gracefully handle when it cannot mount it.
+- SHOULD treat the relation as not ready until the provider has written the `endpoint`.
+- If the `endpoint` has the ID of a Juju secret, SHOULD use the latest revision of that secret.
+- SHOULD unmount the filesystem when the relation is removed.
+
+## Endpoint format
+
+The `endpoint` MUST be in a sublanguage of the URI grammar, which is specified by [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986#appendix-A). The specific sublanguage is defined by the following grammar in Augmented Backus–Naur form:
 
 ```
 key = 1*( unreserved )
@@ -37,80 +41,23 @@ endpoint = scheme "://" authority path-absolute ["?" options]
 
 Any unspecified grammar rule is specified by RFC 3986.
 
-Additionally, any string from the language must adhere to a list of additional requirements:
+Additionally, the `endpoint` MUST meet these requirements:
 
-- The `scheme` component must identify the type of filesystem that needs to be mounted by the client e.g. nfs, cephfs, lustre.
-- The `userinfo` component may contain a user for authentication purposes, but it must not contain
-  any password required to authenticate against the filesystem. In other words, the `user:password` syntax is not allowed.
-- The `hosts` component must contain the host or list of hosts encompassing the server. The characters
-  `(` and `)` must encompass an array of values, and the character `,` must delimit each host ip or domain name. If only
-  a single host is required, the host must still be encompassed by `(` and `)`.
-- The `path-absolute` component may be the exported path of the filesystem.
-- The `options` component may contain any other required data for the specific filesystem type, including but not limited to:
-      - Password to authenticate an user (as a Juju secret).
-      - Cluster identifier.
-      - Filesystem identifier.
-- Since each filesystem type will require different data for its options component, and it is unknown if more data will be  
-  required in the future, the scheme component may be used to version different data formats for the same filesystem type,  
-  which will not introduce any breaking changes.
-- Any reserved character in the URI according to RFC 3986 must be percent-encoded
-  e.g. '!' becomes '%21', '#' becomes '%24', etc.
-- Any sensitive data must be provided as a Juju secret where possible, and only charms that cannot create secrets are
-  allowed to provide their sensitive data as plain text.
+- The `scheme` component MUST identify the type of filesystem that needs to be mounted by the client, for example `nfs`, `cephfs`, or `lustre`.
+- The `userinfo` component MAY contain a user for authentication purposes, but it MUST NOT contain any password required to authenticate against the filesystem. In other words, the `user:password` syntax is not allowed.
+- The `hosts` component MUST contain the host or list of hosts encompassing the server. The characters `(` and `)` MUST encompass the list, and the character `,` MUST delimit each host IP address or domain name. If only a single host is required, the host MUST still be encompassed by `(` and `)`.
+- The `path-absolute` component MAY be the exported path of the filesystem.
+- The `options` component MAY contain any other data required for the specific filesystem type, including but not limited to:
+  - A password to authenticate a user (as a Juju secret).
+  - A cluster identifier.
+  - A filesystem identifier.
+- Since each filesystem type will require different data for its `options` component, and it is unknown if more data will be required in the future, the `scheme` component MAY be used to version different data formats for the same filesystem type, which will not introduce any breaking changes.
+- Any reserved character in the URI according to RFC 3986 MUST be percent-encoded, for example `!` becomes `%21` and `#` becomes `%23`. Inside `hosts`, this includes the `:` before a port, which is written as `%3A`. The `filesystem-client` charm's library also writes the `,` between hosts as `%2C`, and reads it either way.
 
-### Examples
+## Filesystem types
 
-The following examples show some URIs adhering to the defined grammar, and their equivalent components.
+The `filesystem-client` charm's library writes and reads these filesystem types:
 
-- nfs://(192.168.1.1:65535)/export
-  - scheme: nfs
-  - userinfo: None
-  - hosts: 192.168.1.1:65535
-  - path-absolute: /export
-  - options: None
-
-- lustre://(192.168.227.11%40tcp1,192.168.227.12%40tcp1)/export
-  - scheme: lustre
-  - userinfo: None
-  - hosts: 192.168.227.11@tcp1 192.168.227.12@tcp1
-  - path-absolute: /export
-  - options: None
-
-- cephfs://fsuser@(192.168.1.1,192.168.1.2,192.168.1.3)/export?fsid=asdf1234&auth=secret%3AYXNkZnF3ZXJhc2RmcXdlcmFzZGZxd2Vy&filesystem=scratch
-  - scheme: cephfs
-  - userinfo: fsuser
-  - hosts: 192.168.1.1 192.168.1.2 192.168.1.3
-  - path-absolute: /export
-  - options:
-    - fsid: asdf1234
-    - auth: secret:YXNkZnF3ZXJhc2RmcXdlcmFzZGZxd2Vy
-    - filesystem: scratch
-
-### Provider
-
-- Is expected to adhere to both the defined grammar and the additional requirements specified here.
-- Is expected to export mount information for a valid and accessible shared filesystem.
-
-### Requirer
-
-- Is expected to be able to parse the exported endpoint from the provider according to the defined grammar.
-- Is expected to either have support for mounting the provider's exported filesystem, or gracefully
-  handle when it cannot mount it.
-
-## Relation Data
-
-Only the provider must export relation data.
-
-[\[Pydantic Schema\]](./schema.py)
-
-### Example
-```yaml
-provider:
-  app: {
-    "endpoint": "lustre://(192.168.227.11%40tcp1,192.168.227.12%40tcp1)/export"
-  }
-  unit: {}
-requirer:
-  app: {}
-  unit: {}
-```
+- `nfs`: one host, with an optional port, and the exported path. The optional `version` option is the NFS version to mount with, which the `filesystem-client` charm passes as the `vers` mount option.
+- `cephfs`: the Ceph user in `userinfo`, the monitor hosts, and the path within the filesystem. The `fsid` option is the cluster identifier, `name` is the filesystem name, and `auth` is either `secret:<ID>`, the ID of a Juju secret that has the Cephx key in its `key` field, or `plain:<key>` for providers that cannot create secrets. The `auth-rev` option is the revision of the secret, so that the `endpoint` changes when the key changes.
+- `lustre`: the MGS NIDs as the hosts, and the `fs-name` option for the filesystem name. There's no path.
