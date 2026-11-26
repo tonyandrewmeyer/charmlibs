@@ -6,12 +6,12 @@
     "lib_url": "https://pypi.org/project/charmlibs-interfaces-auth-proxy",
     "lib_docs_url": "https://canonical.com/juju/docs/charmlibs/reference/charmlibs/interfaces/auth-proxy",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/auth_proxy/",
-    "summary": "Configure an Identity and Access Proxy.",
-    "description": "The `auth_proxy` interface allows charms to configure an Identity and Access Proxy.\nThe requirer supplies the configuration, such as protected URLs, allowed endpoints, and headers.\nThe provider is responsible for transforming the configuration into access rules and forwarding relevant configuration to the proxy.",
+    "summary": "Protect an application with an Identity and Access Proxy.",
+    "description": "The `auth_proxy` interface allows a charm to ask an Identity and Access Proxy to require authentication for requests to it.\nThe requirer supplies the URLs to protect, the endpoints that don't need authentication, and the headers to set on authenticated requests.\nThe provider turns these into access rules, and passes the names of the applications to protect to an ingress over the `forward_auth` interface.",
     "tags": [
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "azure_service_principal",
@@ -261,12 +261,12 @@
     "lib_url": "https://pypi.org/project/charmlibs-interfaces-forward-auth",
     "lib_docs_url": "https://canonical.com/juju/docs/charmlibs/reference/charmlibs/interfaces/forward-auth",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/forward_auth/",
-    "summary": "",
-    "description": "",
+    "summary": "Forward authentication from an ingress to an Identity and Access Proxy.",
+    "description": "The `forward_auth` interface allows an ingress to delegate authentication to an Identity and Access Proxy.\nThe provider supplies the address that decides whether a request is authenticated, the names of the applications to protect, and the headers to pass on.\nThe requirer, an ingress, supplies the names of the applications it provides ingress to.",
     "tags": [
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "grafana_auth",
@@ -319,12 +319,12 @@
     "lib_url": "https://charmhub.io/hydra/libraries/hydra_endpoints",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/hydra_endpoints/",
-    "summary": "",
-    "description": "",
+    "summary": "Get the admin and public API endpoints of Ory Hydra.",
+    "description": "The `hydra_endpoints` interface allows the charms of the Identity Platform to get the URLs of the admin and public APIs of Ory Hydra.\nThe provider, the Hydra charm, supplies both URLs, and the requirer doesn't write anything.",
     "tags": [
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "ingress",
@@ -455,13 +455,15 @@
   {
     "name": "kratos_external_idp",
     "version": "0",
-    "lib": "",
-    "lib_url": "",
+    "lib": "charms.kratos_external_idp_integrator.kratos_external_provider",
+    "lib_url": "https://charmhub.io/kratos-external-idp-integrator/libraries/kratos_external_provider",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/kratos_external_idp/",
-    "summary": "",
-    "description": "",
-    "tags": [],
+    "summary": "Configure an external identity provider for Ory Kratos.",
+    "description": "The `kratos_external_idp` interface allows Ory Kratos to let users log in with an OpenID Connect provider outside the Juju model.\nThe provider charm passes Kratos the client credentials that an administrator created on the external identity provider.\nThe requirer, the Kratos charm, passes back the redirect URI for the administrator to register on the external identity provider.",
+    "tags": [
+      "identity-auth"
+    ],
     "status": "draft"
   },
   {
@@ -471,8 +473,8 @@
     "lib_url": "https://charmhub.io/kratos/libraries/kratos_info",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/kratos_info/",
-    "summary": "",
-    "description": "",
+    "summary": "Get information about an Ory Kratos deployment.",
+    "description": "The `kratos_info` interface allows the charms of the Identity Platform to get information about an Ory Kratos deployment.\nThe provider, the Kratos charm, supplies its API endpoints, the names and namespace of the Kubernetes ConfigMaps that hold its identity providers and identity schemas, and which features are enabled.\nThe requirer doesn't write anything.",
     "tags": [
       "identity-auth"
     ],
@@ -500,11 +502,11 @@
     "lib_docs_url": "https://canonical.com/juju/docs/charmlibs/reference/charmlibs/interfaces/ldap",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/ldap/",
     "summary": "Configure and connect to a Lightweight Directory Access Protocol (LDAP) server.",
-    "description": "The `ldap` interface supports sharing configuration and connection information for a Lightweight Directory Access Protocol (LDAP) server.\nThe provider is responsible for sharing the LDAP URL and other information needed for the requirer to connect and perform LDAP operations.",
+    "description": "The `ldap` interface supports sharing configuration and connection information for a Lightweight Directory Access Protocol (LDAP) server.\nThe requirer can ask for a bind account with a user and group name.\nThe provider is responsible for sharing the LDAP URLs, the base DN, and a bind account, with its password in a Juju secret, so that the requirer can connect and perform LDAP operations.",
     "tags": [
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "litmus_auth",
@@ -528,12 +530,12 @@
     "lib_url": "https://charmhub.io/identity-platform-login-ui-operator/libraries/login_ui_endpoints",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/login_ui_endpoints/",
-    "summary": "",
-    "description": "",
+    "summary": "Get the page URLs of the Identity Platform Login UI.",
+    "description": "The `login_ui_endpoints` interface allows Ory Hydra and Ory Kratos to send users to the pages of the Identity Platform Login UI.\nThe provider, the Login UI charm, supplies the URL of each page, such as the login, consent, error, and settings pages.\nThe requirer doesn't write anything.",
     "tags": [
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "milter",
@@ -612,11 +614,11 @@
     "lib_docs_url": "https://canonical.com/juju/docs/charmlibs/reference/charmlibs/interfaces/oauth",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/oauth/",
     "summary": "Connect to an OAuth2/OIDC Provider.",
-    "description": "The `oauth` interface allows charms to interface with an OAuth2/OIDC Provider.\nThe requirer acts as an OAuth2 client.\nThe provider exposes an OAuth2/OIDC Provider.",
+    "description": "The `oauth` interface allows charms to interface with an OAuth2/OIDC Provider.\nThe requirer acts as an OAuth2 client, and supplies the client configuration, such as its redirect URIs, grant types, and scopes.\nThe provider exposes an OAuth2/OIDC Provider, registers a client for each relation, and supplies its endpoints and the client's credentials.",
     "tags": [
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "opencti_connector",
@@ -640,7 +642,7 @@
     "lib_docs_url": "https://canonical.com/juju/docs/charmlibs/reference/charmlibs/interfaces/openfga",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/openfga/",
     "summary": "Set up and connect to an OpenFGA store.",
-    "description": "The `openfga` interface supports setting up an OpenFGA store and connecting to it.\nThe requirer specifies the store name, while the provider creates the store and shares the data needed to connect.",
+    "description": "The `openfga` interface supports setting up an OpenFGA store and connecting to it.\nThe requirer specifies the store name, while the provider creates the store and shares the data needed to connect, with the token in a Juju secret.",
     "tags": [
       "identity-auth"
     ],

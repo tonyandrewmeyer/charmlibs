@@ -1,6 +1,11 @@
 name: openfga
 version: 0
 status: retired
+summary: Set up and connect to an OpenFGA store.
+description: |
+  The `openfga` interface supports setting up an OpenFGA store and connecting to it.
+  The requirer specifies the store name, while the provider creates the store and shares the address, scheme, and port of the OpenFGA service, and a token.
+  Version 1 replaced the address, scheme, and port with the URLs of the HTTP and gRPC APIs.
 
 providers: []
 requirers: []

@@ -5,9 +5,22 @@ lib: charmlibs.interfaces.openfga
 summary: Set up and connect to an OpenFGA store.
 description: |
   The `openfga` interface supports setting up an OpenFGA store and connecting to it.
-  The requirer specifies the store name, while the provider creates the store and shares the data needed to connect.
+  The requirer specifies the store name, while the provider creates the store and shares the data needed to connect, with the token in a Juju secret.
 
-providers: []
-requirers: []
+providers:
+  - name: openfga-k8s
+    url: https://github.com/canonical/openfga-operator
+
+requirers:
+  - name: identity-platform-admin-ui
+    url: https://github.com/canonical/identity-platform-admin-ui-operator
+  - name: juju-jimm-k8s
+    url: https://github.com/canonical/jimm-k8s-operator
+  - name: temporal-k8s
+    url: https://github.com/canonical/temporal-k8s-operator
+  - name: hook-service
+    url: https://github.com/canonical/hook-service-operator
+  - name: tenant-service
+    url: https://github.com/canonical/tenant-service-operator
 
 maintainer: identity

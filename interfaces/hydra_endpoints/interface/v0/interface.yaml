@@ -2,15 +2,23 @@ name: hydra_endpoints
 internal: true
 
 version: 0
-status: draft
+status: published
 lib: charms.hydra.hydra_endpoints
+summary: Get the admin and public API endpoints of Ory Hydra.
+description: |
+  The `hydra_endpoints` interface allows the charms of the Identity Platform to get the URLs of the admin and public APIs of Ory Hydra.
+  The provider, the Hydra charm, supplies both URLs, and the requirer doesn't write anything.
 
 providers:
-  - name: hydra-operator
+  - name: hydra
     url: https://github.com/canonical/hydra-operator
 
 requirers:
-  - name: kratos-operator
+  - name: kratos
     url: https://github.com/canonical/kratos-operator
+  - name: identity-platform-login-ui-operator
+    url: https://github.com/canonical/identity-platform-login-ui-operator
+  - name: identity-platform-admin-ui
+    url: https://github.com/canonical/identity-platform-admin-ui-operator
 
 maintainer: identity

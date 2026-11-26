@@ -1,81 +1,99 @@
 # Copyright 2023 Canonical
 # See LICENSE file for licensing details.
-"""This file defines the schemas for the provider and requirer sides of the openfga interface.
+"""This file defines the schemas for the provider and requirer sides of the openfga interface."""
 
-It exposes two interfaces.schema_base.DataBagSchema subclasses called:
-- ProviderSchema
-- RequirerSchema
-
-Examples:
-    ProviderSchema:
-        unit: <empty>
-        app: {"openfga":
-                 {"address":  "10.10.0.17",
-                  "port": "8080",
-                  "scheme": "http",
-                  "token": "test-token",
-                  "store_id": "01GK13VYZK62Q1T0X55Q2BHYD6",
-                 }
-             }
-
-    RequirerSchema:
-        unit: <empty>
-        app: {"store_name": "test-store-name"}
-"""
-
-from interface_tester.schema_base import DataBagSchema
-from pydantic import BaseModel, Field, IPvAnyAddress
+from pydantic import BaseModel, ConfigDict, Field, IPvAnyAddress
 
 
-class OpenFGAProviderData(BaseModel):
+class ProviderAppData(BaseModel):
     """Provider data schema for OpenFGA v0."""
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            'examples': [
+                {
+                    'store_id': '01GK13VYZK62Q1T0X55Q2BHYD6',
+                    'token_secret_id': 'secret:cs8l6hvmp25c77r5ou5g',
+                    'address': '10.10.0.17',
+                    'scheme': 'http',
+                    'port': '8080',
+                    'dns_name': 'openfga-k8s-0.openfga-k8s-endpoints.mymodel.svc.cluster.local',
+                },
+                {
+                    'store_id': '01GK13VYZK62Q1T0X55Q2BHYD6',
+                    'token': 'test-token',
+                    'address': '10.10.0.17',
+                    'scheme': 'http',
+                    'port': '8080',
+                },
+            ]
+        }
+    )
 
     address: IPvAnyAddress = Field(
         description='The address of the OpenFGA service.',
         title='OpenFGA address',
-        examples=['10.10.4.1'],
+        examples=['10.10.0.17'],
     )
     port: int = Field(
-        description='Port on which the OpenFGA service is listening (HTTP).',
+        description='The port that the OpenFGA service listens on (HTTP).',
         title='OpenFGA port',
-        examples=[8080],
+        examples=['8080'],
     )
     scheme: str = Field(
-        description='Scheme to be used to connect to the OpenFGA service.',
+        description='The scheme to use to connect to the OpenFGA service.',
         title='OpenFGA scheme',
         examples=['http', 'https'],
     )
-    token_secret_id: str = Field(
+    dns_name: str | None = Field(
+        default=None,
+        description='The DNS name of the OpenFGA service.',
+        title='OpenFGA DNS name',
+        examples=['openfga-k8s-0.openfga-k8s-endpoints.mymodel.svc.cluster.local'],
+    )
+    token_secret_id: str | None = Field(
+        default=None,
         description=(
-            'Secret ID of the preshared token to be used to connect to the OpenFGA service.'
+            'The ID of the Juju secret that holds the preshared token to connect to the '
+            'OpenFGA service, under the `token` key.'
         ),
         title='Secret ID of the OpenFGA token',
+        examples=['secret:cs8l6hvmp25c77r5ou5g'],
     )
-
-    store_id: str = Field(
-        description='ID of the authentication stored that was created.',
+    token: str | None = Field(
+        default=None,
+        description=(
+            'The preshared token to connect to the OpenFGA service, '
+            'written when Juju secrets are not available.'
+        ),
+        title='The OpenFGA token',
+        examples=['test-token'],
+    )
+    store_id: str | None = Field(
+        default=None,
+        description='The ID of the authorization store that was created.',
         title='OpenFGA store ID',
         examples=['01GK13VYZK62Q1T0X55Q2BHYD6'],
     )
 
 
-class ProviderSchema(DataBagSchema):
-    """Provider schema for OpenFGA."""
-
-    app: OpenFGAProviderData
-
-
-class OpenFGARequirerData(BaseModel):
+class RequirerAppData(BaseModel):
     """Requirer data schema for OpenFGA v0."""
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            'examples': [
+                {'store_name': 'test-store'},
+            ]
+        }
+    )
+
     store_name: str = Field(
-        description='The name of the authentication store.',
+        description='The name of the authorization store.',
         title='Authorization store name',
-        examples=['auth_store'],
+        examples=['test-store', 'auth_store'],
     )
 
 
-class RequirerSchema(DataBagSchema):
-    """Requirer schema for OpenFGA."""
-
-    app: OpenFGARequirerData
+ProviderUnitData = None
+RequirerUnitData = None

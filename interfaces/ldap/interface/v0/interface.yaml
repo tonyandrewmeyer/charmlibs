@@ -1,19 +1,26 @@
 name: ldap
 version: 0
-status: draft
+status: published
 lib: charmlibs.interfaces.ldap
 summary: Configure and connect to a Lightweight Directory Access Protocol (LDAP) server.
 description: |
   The `ldap` interface supports sharing configuration and connection information for a Lightweight Directory Access Protocol (LDAP) server.
-  The provider is responsible for sharing the LDAP URL and other information needed for the requirer to connect and perform LDAP operations.
+  The requirer can ask for a bind account with a user and group name.
+  The provider is responsible for sharing the LDAP URLs, the base DN, and a bind account, with its password in a Juju secret, so that the requirer can connect and perform LDAP operations.
 
 providers:
   - name: glauth-k8s
     url: https://github.com/canonical/glauth-k8s-operator
   - name: authentik-ldap-outpost
     url: https://github.com/canonical/authentik-ldap-outpost-operator
+  - name: ldap-integrator
+    url: https://github.com/canonical/ldap-integrator
+  - name: comsys-openldap-k8s
+    url: https://github.com/canonical/comsys-openldap-k8s-operator
 requirers:
   - name: sssd
     url: https://github.com/canonical/sssd-operator
+  - name: postgresql
+    url: https://github.com/canonical/postgresql-operator
 
 maintainer: identity
