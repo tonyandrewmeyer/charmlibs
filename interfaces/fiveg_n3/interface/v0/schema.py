@@ -1,21 +1,21 @@
-"""This file defines the schemas for the provider and requirer sides of the `fiveg_n3` interface.
+"""This file defines the schemas for the provider and requirer sides of the `fiveg_n3` interface."""
 
-Examples:
-    Provider:
-        unit: <empty>
-        app: {
-            "upf_ip_address": "1.2.3.4"
-        }
-    Requirer:
-        unit: <empty>
-        app:  <empty>
-"""
-
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ProviderAppData(BaseModel):
-    upf_ip_address: str
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {"upf_ip_address": "192.168.252.3"},
+            ]
+        }
+    )
+
+    upf_ip_address: str = Field(
+        description="The IP address of the UPF's N3 (access) interface.",
+        examples=["192.168.252.3"],
+    )
 
 
 ProviderUnitData = None

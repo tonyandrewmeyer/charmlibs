@@ -1,43 +1,16 @@
-# `fiveg_nrf/v0`
-
-## Usage
-
-Within 5G, the Network Repository Function (NRF) is responsible for providing information about discovered network function instances.
-
-This relation interface describes the expected behavior of any charm claiming to be able to provide or consume NRF information.
-
-## Direction
-
-```mermaid
-flowchart TD
-    Provider -- url --> Requirer
-```
-
-As with all Juju relations, the `fiveg_nrf` interface consists of two parties: a Provider and a Requirer.
+# fiveg_nrf
 
 ## Behavior
 
-Both the Requirer and the Provider need to adhere to criteria to be considered compatible with the interface.
+Keywords are as in RFC 2119.
 
 ### Provider
 
-- Is expected to provide the NRF url.
+- MUST write `url` to the application databag of every relation from the leader unit.
+- SHOULD NOT write anything until the NRF is running.
+- MUST update the databag when the URL changes.
 
 ### Requirer
 
-- Is expected to use the provider's url to register itself and/or learn about registered network functions.
-
-## Relation Data
-
-[\[Pydantic Schema\]](./schema.py)
-
-### Example
-
-```yaml
-provider:
-  app: {"url": "http://example-nrf.com:1234"}
-  unit: {}
-requirer:
-  app: {}
-  unit: {}
-```
+- MUST NOT write to either databag.
+- MUST use the provider's URL to register itself, to learn about registered network functions, or both.

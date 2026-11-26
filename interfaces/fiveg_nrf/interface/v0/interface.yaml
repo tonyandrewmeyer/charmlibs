@@ -2,10 +2,20 @@ name: fiveg_nrf
 internal: true
 
 version: 0
-status: draft
+status: retired
 lib: charms.sdcore_nrf_k8s.fiveg_nrf
+summary: Get the URL of a 5G NRF.
+description: |
+  Within 5G, the Network Repository Function (NRF) is responsible for providing information about discovered network function instances.
+  The `fiveg_nrf` interface allows a network function to get the NRF's URL, so that it can register itself or learn about registered network functions.
 
-providers: []
-requirers: []
+providers:
+  - name: sdcore-nrf-k8s
+    url: https://github.com/canonical/sdcore-nrf-k8s-operator
+requirers:
+  - name: sdcore-amf-k8s
+    url: https://github.com/canonical/sdcore-amf-k8s-operator
+  - name: sdcore-smf-k8s
+    url: https://github.com/canonical/sdcore-smf-k8s-operator
 
-maintainer: telco
+maintainer: charmlibs-maintainers

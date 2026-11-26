@@ -2,14 +2,21 @@ name: fiveg_core_gnb
 internal: true
 
 version: 0
-status: draft
+status: retired
 lib: charms.sdcore_nms_k8s.fiveg_core_gnb
+summary: Configure a CU or gNodeB with the TAC and PLMNs of a 5G core network.
+description: |
+  Within 5G, the CU (Central Unit) of a RAN (Radio Access Network), or a gNodeB, needs to be configured according to the parameters of the 5G network.
+  The `fiveg_core_gnb` interface allows a CU or gNodeB to get its configuration from the 5G core, typically from the NMS (Network Management System).
+  The requirer (the CU or gNodeB) provides its unique name, and the provider (the core) provides the TAC (Tracking Area Code) and list of PLMNs (Public Land Mobile Networks) for that name.
 
 providers:
-  - name: sdcore-nms-k8s-operator
+  - name: sdcore-nms-k8s
     url: https://github.com/canonical/sdcore-nms-k8s-operator
 requirers:
-  - name: sdcore-gnbsim-k8s-operator
+  - name: sdcore-gnbsim-k8s
     url: https://github.com/canonical/sdcore-gnbsim-k8s-operator
+  - name: oai-ran-cu-k8s
+    url: https://github.com/canonical/oai-ran-cu-k8s-operator
 
-maintainer: telco
+maintainer: charmlibs-maintainers

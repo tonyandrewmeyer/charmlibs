@@ -2,8 +2,14 @@ name: sdcore_config
 internal: true
 
 version: 0
-status: draft
+status: retired
 lib: charms.sdcore_nms_k8s.sdcore_config
+summary: Get the gRPC address of the SD-Core configuration service.
+description: |
+  Within SD-Core, the network functions need to connect to the configuration service (Webui) to get the configuration of the SD-Core network.
+  The address of the service is its hostname, which is the application name, and a fixed gRPC port.
+  The `sdcore_config` interface allows a network function to get that address.
+  In an SD-Core network, the provider of this interface would be the charm that runs the configuration service, such as the NMS (Network Management System), and the requirers would be the control plane network functions (AMF, AUSF, NRF, NSSF, PCF, SMF, UDM, and UDR).
 
 providers:
   - name: sdcore-nms-k8s
@@ -12,7 +18,7 @@ providers:
 requirers:
   - name: sdcore-amf-k8s
     url: https://github.com/canonical/sdcore-amf-k8s-operator
-  - name: sdcore-ausfr-k8s
+  - name: sdcore-ausf-k8s
     url: https://github.com/canonical/sdcore-ausf-k8s-operator
   - name: sdcore-nrf-k8s
     url: https://github.com/canonical/sdcore-nrf-k8s-operator
@@ -27,4 +33,4 @@ requirers:
   - name: sdcore-udr-k8s
     url: https://github.com/canonical/sdcore-udr-k8s-operator
 
-maintainer: telco
+maintainer: charmlibs-maintainers

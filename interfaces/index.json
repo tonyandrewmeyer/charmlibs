@@ -158,36 +158,36 @@
     "lib_url": "https://charmhub.io/sdcore-nms-k8s/libraries/fiveg_core_gnb",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/fiveg_core_gnb/",
-    "summary": "",
-    "description": "",
+    "summary": "Configure a CU or gNodeB with the TAC and PLMNs of a 5G core network.",
+    "description": "Within 5G, the CU (Central Unit) of a RAN (Radio Access Network), or a gNodeB, needs to be configured according to the parameters of the 5G network.\nThe `fiveg_core_gnb` interface allows a CU or gNodeB to get its configuration from the 5G core, typically from the NMS (Network Management System).\nThe requirer (the CU or gNodeB) provides its unique name, and the provider (the core) provides the TAC (Tracking Area Code) and list of PLMNs (Public Land Mobile Networks) for that name.",
     "tags": [
       "telco"
     ],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "fiveg_f1",
     "version": "0",
-    "lib": "",
+    "lib": "charms.oai_ran_cu_k8s.fiveg_f1",
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/fiveg_f1/",
-    "summary": "",
-    "description": "",
+    "summary": "Connect a 5G DU to a CU over the F1 interface.",
+    "description": "Within 5G RAN (Radio Access Network) architecture, the Functional Split (F1) interface carries the communication between the Central Unit (CU) and the Distributed Unit (DU).\nThe `fiveg_f1` interface allows a DU to connect to a CU over F1.\nThe provider (the CU) provides the IP address and port that it uses for F1 traffic, and the TAC (Tracking Area Code) and PLMNs (Public Land Mobile Networks) that it is configured with.\nThe requirer (the DU) provides the port that it uses for F1 traffic.",
     "tags": [],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "fiveg_gnb_identity",
     "version": "0",
-    "lib": "",
+    "lib": "charms.sdcore_gnbsim_k8s.fiveg_gnb_identity",
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/fiveg_gnb_identity/",
-    "summary": "",
-    "description": "",
+    "summary": "Share the name and TAC of a 5G gNodeB.",
+    "description": "Within 5G, the identity of the gNodeB (a 5G base station) needs to be known by other components.\nThe `fiveg_gnb_identity` interface allows a gNodeB to share its name and TAC (Tracking Area Code).\nIn a typical 5G network, the provider of this interface would be a gNodeB, and the requirer would be the NMS (Network Management System).\nThe charms that used this interface have replaced it with `fiveg_core_gnb`.",
     "tags": [],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "fiveg_n2",
@@ -196,24 +196,24 @@
     "lib_url": "https://charmhub.io/sdcore-amf-k8s/libraries/fiveg_n2",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/fiveg_n2/",
-    "summary": "",
-    "description": "",
+    "summary": "Connect a 5G radio to the N2 interface of the AMF.",
+    "description": "Within 5G, the Access and Mobility Management Function (AMF) is responsible for managing access and mobility for 5G devices.\nThe 5G radio (gNodeB) communicates with the core's control plane, specifically the AMF, using the N2 interface and the Next Generation Application Protocol (NGAP).\nThe `fiveg_n2` interface allows a gNodeB, or the CU (Central Unit) of a RAN, to get the IP address, hostname, and port of the AMF's N2 interface.",
     "tags": [
       "telco"
     ],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "fiveg_n3",
     "version": "0",
-    "lib": "",
+    "lib": "charms.sdcore_upf_k8s.fiveg_n3",
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/fiveg_n3/",
-    "summary": "",
-    "description": "",
+    "summary": "Get the IP address of a 5G UPF for the N3 interface.",
+    "description": "Within 5G, the User Plane Function (UPF) supports features and capabilities to facilitate user plane operation, such as packet routing and forwarding, interconnection to the Data Network, policy enforcement, and data buffering.\nThe `fiveg_n3` interface allows a charm to get the UPF's IP address, so that it can communicate with the UPF over the N3 interface.\nIn a typical 5G network, the requirer of this interface would be a gNodeB (a 5G base station).",
     "tags": [],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "fiveg_n4",
@@ -222,12 +222,12 @@
     "lib_url": "https://charmhub.io/sdcore-upf-k8s/libraries/fiveg_n4",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/fiveg_n4/",
-    "summary": "",
-    "description": "",
+    "summary": "Get the hostname and port of the N4 interface of a 5G UPF.",
+    "description": "Within 5G, the User Plane Function (UPF) supports features and capabilities to facilitate user plane operation, such as packet routing and forwarding, interconnection to the Data Network, policy enforcement, and data buffering.\nThe `fiveg_n4` interface allows a charm to get the hostname and port of the UPF's N4 interface, so that it can communicate with the UPF over that interface.\nIn a typical 5G network, the N4 interface is used between the UPF and the SMF.",
     "tags": [
       "telco"
     ],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "fiveg_nrf",
@@ -236,24 +236,24 @@
     "lib_url": "https://charmhub.io/sdcore-nrf-k8s/libraries/fiveg_nrf",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/fiveg_nrf/",
-    "summary": "",
-    "description": "",
+    "summary": "Get the URL of a 5G NRF.",
+    "description": "Within 5G, the Network Repository Function (NRF) is responsible for providing information about discovered network function instances.\nThe `fiveg_nrf` interface allows a network function to get the NRF's URL, so that it can register itself or learn about registered network functions.",
     "tags": [
       "telco"
     ],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "fiveg_rfsim",
     "version": "0",
-    "lib": "",
+    "lib": "charms.oai_ran_du_k8s.fiveg_rfsim",
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/fiveg_rfsim/",
-    "summary": "",
-    "description": "",
+    "summary": "Connect a simulated 5G UE to the RF simulator of a DU.",
+    "description": "Within 5G RAN (Radio Access Network) architecture, the OAI DU charm can act as both the DU and the RU through its RF simulator.\nThe `fiveg_rfsim` interface allows a simulated UE, such as the OAI UE charm, to get the RF simulator's address and the network slice and radio settings that it needs to connect.\nThe provider of this interface would be the OAI DU charm, and the requirer would be the OAI UE charm.\nThe charms that used this interface have replaced it with `fiveg_rf_config`.",
     "tags": [],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "forward_auth",
@@ -360,14 +360,14 @@
   {
     "name": "ip_router",
     "version": "0",
-    "lib": "",
+    "lib": "charms.ip_router_interface.ip_router_interface",
     "lib_url": "",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/ip_router/",
-    "summary": "",
-    "description": "",
+    "summary": "Request networks and routes from a router, and share them with other charms.",
+    "description": "The `ip_router` interface allows charms to request IP networks and routes from a router, and to learn about the networks that other charms have requested.\nEach requirer provides the networks that it needs, each with a gateway and optional routes.\nThe provider (the router) combines the requests from every requirer into a single routing table, and provides that table to every requirer.",
     "tags": [],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "istio_metadata",
@@ -761,12 +761,12 @@
     "lib_url": "https://charmhub.io/sdcore-nms-k8s/libraries/sdcore_config",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/sdcore_config/",
-    "summary": "",
-    "description": "",
+    "summary": "Get the gRPC address of the SD-Core configuration service.",
+    "description": "Within SD-Core, the network functions need to connect to the configuration service (Webui) to get the configuration of the SD-Core network.\nThe address of the service is its hostname, which is the application name, and a fixed gRPC port.\nThe `sdcore_config` interface allows a network function to get that address.\nIn an SD-Core network, the provider of this interface would be the charm that runs the configuration service, such as the NMS (Network Management System), and the requirers would be the control plane network functions (AMF, AUSF, NRF, NSSF, PCF, SMF, UDM, and UDR).",
     "tags": [
       "telco"
     ],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "sdcore_management",
@@ -775,12 +775,12 @@
     "lib_url": "https://charmhub.io/sdcore-webui-k8s/libraries/sdcore_management",
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/sdcore_management/",
-    "summary": "",
-    "description": "",
+    "summary": "Get the address of the SD-Core configuration and management service.",
+    "description": "Within Charmed 5G, the components that make configuration changes to the network need access to the configuration and management service.\nThe `sdcore_management` interface allows a charm to get the address of the endpoint of the configuration service in SD-Core.\nA typical provider is the SD-Core Webui charm, which is responsible for the configuration of the SD-Core network, and a typical requirer is the SD-Core NMS (Network Management System) charm, which provides a user interface to manage and configure the network.\nThe SD-Core NMS charm has since taken over the role of the Webui charm, and no longer uses this interface.",
     "tags": [
       "telco"
     ],
-    "status": "draft"
+    "status": "retired"
   },
   {
     "name": "smtp",

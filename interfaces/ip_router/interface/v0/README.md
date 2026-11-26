@@ -1,79 +1,20 @@
-# `ip_router/v0`
-
-## Usage
-
-The `ip_router` relation interface describes the expected behavior of any charm claiming to be able 
-to provide or consume IP routes.
-
-## Direction
-
-```mermaid
-flowchart TD
-    Requirer -- Networks --> Provider
-    Provider -- Networks --> Requirer
-```
-
-As with all Juju relations, the `ip_router` interface consists of two parties: a Provider and a Requirer.
+# ip_router
 
 ## Behavior
 
-Both the Requirer and the Provider need to adhere to criteria to be considered compatible with the interface.
-
-### Requirer
-
-- Is expected to provide a list of networks, each containing a gateway and routes
+Keywords are as in RFC 2119.
 
 ### Provider
 
-- Is expected to have an interface available at the gateway address provided by the requirer
-- Is expected to implement the requested routes provided by the requirer
-- Is expected to provide the list of networks it contains
+- MUST have an interface available at the gateway address of every network that a requirer requests.
+- MUST implement the routes that the requirers request.
+- MUST write the routing table, with the networks from every requirer, to `networks` in the application databag of every relation from the leader unit.
+- MUST update the routing table when a requirer changes its request, or when a relation is removed.
 
-## Relation Data
+### Requirer
 
-[\[Pydantic Schema\]](./schema.py)
-
-### Example
-
-```yaml
-requirer:
-  app: {
-    "networks": [
-      {
-        "network": "192.168.250.0/24",
-        "gateway": "192.168.250.1",
-        "routes": [
-          {
-            "destination": "172.250.0.0/16",
-            "gateway": "192.168.250.3"
-          }
-        ]
-      }
-    ]
-  }
-  unit: { }
-provider:
-  app: {
-    "networks": [
-      {
-        "network": "192.168.250.0/24",
-        "gateway": "192.168.250.1",
-        "routes": [
-          {
-            "destination": "172.250.0.0/16",
-            "gateway": "192.168.250.3"
-          }
-        ]
-      },
-      {
-        "network": "192.168.252.0/24",
-        "gateway": "192.168.252.1",
-      },
-      {
-        "network": "192.168.251.0/24",
-        "gateway": "192.168.251.1/24"
-      }
-    ]
-  }
-  unit: { }
-```
+- MUST write the networks that it requests to `networks` in the application databag from the leader unit.
+- MUST include every network that it needs in each request, because a request replaces the previous one.
+- MUST use network names that are unique among all the requirers of the same provider.
+- MUST NOT request a network that overlaps a network that another requirer has requested.
+- MUST request networks whose gateway, and the gateway of each of their routes, is in the network.

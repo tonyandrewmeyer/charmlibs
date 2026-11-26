@@ -2,10 +2,21 @@ name: fiveg_n4
 internal: true
 
 version: 0
-status: draft
+status: retired
 lib: charms.sdcore_upf_k8s.fiveg_n4
+summary: Get the hostname and port of the N4 interface of a 5G UPF.
+description: |
+  Within 5G, the User Plane Function (UPF) supports features and capabilities to facilitate user plane operation, such as packet routing and forwarding, interconnection to the Data Network, policy enforcement, and data buffering.
+  The `fiveg_n4` interface allows a charm to get the hostname and port of the UPF's N4 interface, so that it can communicate with the UPF over that interface.
+  In a typical 5G network, the N4 interface is used between the UPF and the SMF.
 
-providers: []
-requirers: []
+providers:
+  - name: sdcore-upf-k8s
+    url: https://github.com/canonical/sdcore-upf-k8s-operator
+  - name: sdcore-upf
+    url: https://github.com/canonical/sdcore-upf-operator
+requirers:
+  - name: sdcore-nms-k8s
+    url: https://github.com/canonical/sdcore-nms-k8s-operator
 
-maintainer: telco
+maintainer: charmlibs-maintainers
