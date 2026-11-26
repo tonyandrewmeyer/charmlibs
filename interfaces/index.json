@@ -669,12 +669,12 @@
     "lib_docs_url": "",
     "docs_url": "https://canonical.com/juju/docs/charmlibs/reference/interfaces/postgresql_client/",
     "summary": "Access PostgreSQL databases with unique credentials.",
-    "description": "The `postgresql_client` interface allows charms to access PostgreSQL databases with unique, relation-specific credentials.\nThe provider charm creates database users and provides connection details, while the requirer charm requests a database name and optional custom entities with specific role permissions. Supports subordinate charms that provide external connectivity.",
+    "description": "The `postgresql_client` interface allows charms to access PostgreSQL databases with unique, relation-specific credentials, transmitted via Juju secrets when both sides support them.\nThe requirer charm requests a database (or a prefix that matches several databases), and optionally extra roles; the provider charm creates a database user, and the database if needed, and provides the credentials and connection details.\nSome providers, such as PgBouncer on machines, are subordinate charms that offer a local service within a principal unless the requirer asks for external connectivity.\nIt follows the same pattern as the other `<database>_client` interfaces, such as `mysql_client` and `mongodb_client`.",
     "tags": [
       "data",
       "identity-auth"
     ],
-    "status": "draft"
+    "status": "published"
   },
   {
     "name": "profiling",
