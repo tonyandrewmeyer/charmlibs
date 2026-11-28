@@ -1080,7 +1080,7 @@ class DebianRepository:
                 Expect it to result in an add-apt-repository call under the hood, like
                 ``add-apt-repository --no-update --sourceslist="$repo_line"``,
                 unless the line includes options (such as ``arch``), in which case the
-                source file is written directly, because add-apt-repository drops options
+                source file is written directly, because add-apt-repository drops options.
         """
         repo = RepositoryMapping._parse(
             repo_line,
@@ -1545,7 +1545,7 @@ def _write_repository(repo: DebianRepository) -> None:
     used, in the exact one-line format :meth:`DebianRepository.disable` searches for.
     """
     if not repo.filename:
-        # write to the same file add-apt-repository would have
+        # Use the same file that add-apt-repository would have written to.
         repo.filename = repo._make_filename()
     line = _repo_to_line(repo)
     logger.info("writing apt source to %s: '%s'", repo.filename, line)
@@ -1572,7 +1572,7 @@ def _add_repository(
         )
         logger.warning(msg, line, key_file)
     if repo.options and not remove:
-        # add-apt-repository silently drops repository options such as `arch` (#790)
+        # Write the file directly, because add-apt-repository drops options such as `arch`.
         _write_repository(repo)
         if update_cache:
             update()
