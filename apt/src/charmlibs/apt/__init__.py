@@ -1078,7 +1078,9 @@ class DebianRepository:
             repo_line: a string representing a repository entry
             write_file: Boolean to enable writing the new repo to disk. True by default.
                 Expect it to result in an add-apt-repository call under the hood, like
-                ``add-apt-repository --no-update --sourceslist="$repo_line"``
+                ``add-apt-repository --no-update --sourceslist="$repo_line"``,
+                unless the line includes options (such as ``arch``), in which case the
+                source file is written directly, because add-apt-repository drops options
         """
         repo = RepositoryMapping._parse(
             repo_line,
@@ -1486,7 +1488,11 @@ class RepositoryMapping(Mapping[str, DebianRepository]):
     def add(  # noqa: D417  # undocumented-param: default_filename intentionally undocumented
         self, repo: DebianRepository, default_filename: bool | None = False
     ) -> None:
-        """Add a new repository to the system using add-apt-repository.
+        """Add a new repository to the system.
+
+        Repositories without options are added using add-apt-repository. Repositories with
+        options (such as ``arch``) are written directly to their source file, because
+        add-apt-repository silently drops repository options.
 
         Args:
             repo: a :class:`DebianRepository` object
@@ -1531,6 +1537,26 @@ class RepositoryMapping(Mapping[str, DebianRepository]):
         # ^ adding to map on disable seems like a bug, but this is the previous behaviour
 
 
+def _write_repository(repo: DebianRepository) -> None:
+    """Write a repository definition directly to its source file.
+
+    ``add-apt-repository`` silently drops repository options such as ``arch`` when adding a
+    source, so repositories with options are written to the file add-apt-repository would have
+    used, in the exact one-line format :meth:`DebianRepository.disable` searches for.
+    """
+    if not repo.filename:
+        # write to the same file add-apt-repository would have
+        repo.filename = repo._make_filename()
+    line = _repo_to_line(repo)
+    logger.info("writing apt source to %s: '%s'", repo.filename, line)
+    if os.path.isfile(repo.filename):
+        with open(repo.filename) as f:
+            if line in f.read().splitlines():  # keep adding the repository idempotent
+                return
+    with open(repo.filename, 'a') as f:
+        f.write(f'{line}\n')
+
+
 def _add_repository(
     repo: DebianRepository,
     remove: bool = False,
@@ -1540,11 +1566,17 @@ def _add_repository(
     key_file = repo.gpg_key
     if key_file and not remove and not os.path.exists(key_file):
         msg = (
-            "Adding repository '%s' with add-apt-repository."
+            "Adding repository '%s'."
             " Key file '%s' does not exist."
             ' Ensure it is imported correctly to use this repository.'
         )
         logger.warning(msg, line, key_file)
+    if repo.options and not remove:
+        # add-apt-repository silently drops repository options such as `arch` (#790)
+        _write_repository(repo)
+        if update_cache:
+            update()
+        return
     cmd = [
         'add-apt-repository',
         '--yes',
